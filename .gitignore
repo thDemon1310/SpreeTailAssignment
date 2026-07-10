@@ -1,0 +1,40 @@
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+*.log
+venv/
+env/
+.venv/
+*.egg-info/
+staticfiles/
+media/
+
+# Django migrations note:
+# DO commit migrations (they're part of your schema history and the evaluator
+# will want to see them) — do NOT add migrations/ to this file.
+
+# Node / React
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Gemini CLI / AI tool scratch files, if any get generated
+.gemini/
+*.tmp
