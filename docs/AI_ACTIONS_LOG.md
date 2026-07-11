@@ -56,3 +56,13 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Asked for:** Standalone split calc function for all four split types, tests written first (GEMINI.md Sec 3), rounding policy from SCOPE.md #12 applied, remainder decision confirmed by human before writing.
 **Produced:** `core/split_calc.py` — `calculate_splits()` pure function (no DB access), `SplitCalcError` for invalid inputs. All four types: equal (total/n, ROUND_HALF_UP each), unequal (explicit INR amounts, rounded), percentage (total × pct/100, tolerance check for sum≠100), shares (total × share/total_shares). Remainder after rounding assigned to payer per DECISIONS.md [2026-07-11]. `core/tests_split_calc.py` — 22 tests written and run to failure first, then implementation written to pass them. 40 total tests all passing.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-11] Phase 2 Task 2: Balance calculation function
+**Asked for:** Per-group and per-user balance function, membership window exclusion, tests first before wiring to a view.
+**Produced:** `core/balance_calc.py` — `calculate_balances(group_id)` returns `{user_id: Decimal}`, `calculate_user_balance(group_id, user_id)` returns single Decimal. Membership window filter applied at SQL level (`expense__date__gte=joined_on`, `expense__date__lte=left_on`), not a Python loop. Zero-sum invariant holds. `core/tests_balance_calc.py` — 15 tests: simple balances, zero-sum, membership window (before join, after leave, on both boundaries, no membership), settlement clear/partial/wrong-group, rounding in balance.
+**Human caught wrong / had to redirect?** Yes — AI wrote settlement formula as `received - made` (wrong direction). Caught by 3 failing tests. Root cause diagnosed correctly (formula, not the tests). Fix: flipped to `made - received` (paying off debt is positive to your balance; receiving a settlement reduces your outstanding receivable). One test comment also had the wrong expected value for Rohan (described as +50, correct is -50 because he owes his share of both expenses). Both fixed before passing.
+
+## [2026-07-11] Phase 2 Task 3: Rounding policy consistency verified
+**Asked for:** Confirm ROUND_HALF_UP applied consistently in both functions.
+**Produced:** No new code — verified by inspection and tests. split_calc applies `_round()` (ROUND_HALF_UP, 2dp) to every share. balance_calc sums already-rounded Decimal values from DB (no re-rounding). DECISIONS.md [2026-07-11] is the authoritative reference. 55 total tests all passing.
+**Human caught wrong / had to redirect?** No.
