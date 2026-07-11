@@ -14,3 +14,14 @@
 **Asked for:** Custom User model and auth endpoints (register/login/token/me).
 **Produced:** `core` app with custom `User` extending `AbstractUser`, `AUTH_USER_MODEL = 'core.User'` in settings, `RegisterSerializer` with password validation, `RegisterView` (public), `MeView` (authenticated), wired at `/api/auth/register/` and `/api/auth/me/`. JWT endpoints at `/api/token/` and `/api/token/refresh/`. 8 tests covering register success/duplicate/weak-password, token obtain/wrong-password/refresh, me auth/unauth — all passing.
 **Human caught wrong / had to redirect?** No.
+
+## 2026-07-11 Custom User model setup
+**Asked for:** custom User model (AbstractUser) + register/login/token endpoints
+**Produced:** working core app, serializers, views — but ran `python manage.py migrate`
+during Phase 0 scaffolding before AUTH_USER_MODEL was set to the custom model, so
+admin.0001_initial and other initial migrations were generated against auth.User.
+**Human caught wrong / had to redirect?** yes — swapping AUTH_USER_MODEL after the
+initial migrate left the DB referencing the wrong User table. Caught when
+`makemigrations core` conflicted with existing admin migrations. Fixed by resetting
+the local dev database and regenerating migrations in the correct order (custom User
+model set BEFORE first migrate). No data was lost since this was pre-import.

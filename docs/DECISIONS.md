@@ -1,14 +1,13 @@
-# 3
-- 1. Negative amounts → treat as refund, not error. 
-- 2. Exact duplicates → auto-drop, keep the first, log it. When date + amount + payer + a normalized description all match, there's no real ambiguity — it's the same event typed twice. Making a human confirm every obvious duplicate wastes their trust in the tool.
-- 3. Same expense, different amounts → never auto-merge, always flag both. This is the opposite of #2 on purpose. You don't know if it's ₹2400 or ₹2450, and averaging or guessing invents a number nobody actually agreed to. This is the one place where "the app decided" is genuinely the wrong answer.
-- 4. Settlement disguised as an expense → route to a Settlement table. If you leave it as an expense, it gets split among everyone and Aisha effectively "pays herself" — the math becomes wrong for the whole group, not just that row. It has to leave the Expense table entirely.
-- 5. Currency conversion → fixed, stated rate, not a live API call. A live FX call adds a dependency that can fail, and the assignment doesn't reward cleverness here — it rewards traceability. State one rate ("1 USD = 95.38 INR, as of the trip date") and store both the original and converted amount on the row so nothing is lossy. Simpler to defend live than "the API said X that day."
-- 6. Kabir the non-member → exclude his share, redistribute among real members. Adding him as a tracked user for one day of parasailing overcomplicates the membership model for zero long-term value. Redistributing his share back to the actual flatmates keeps the group's total cost accounted for without inventing a person who'll never appear again.
-- 7. Stale member in a split after they've left → exclude and redistribute, driven by Membership dates, not a one-off fix. This is Sam's exact question in the brief, so it can't be a special case for one row — it has to be a general rule: check the expense date against left_on for every split, every time.
-- 8. Missing fields → block the row, never guess. This is Meera's explicit ask — nothing gets silently decided. A blank payer or currency goes into a manual-review queue and doesn't touch anyone's balance until a human fills it in.
-- 9. Bad/ambiguous dates → block and flag, never auto-correct. Auto-"fixing" 2014 to 2026 is probably right, but "probably" isn't good enough when it changes who owes what. Surface it, let a human confirm.
-- 10. Percentages over 100% → normalize proportionally, but flag loudly. Rejecting the whole row throws away a real ₹1440 dinner; silently accepting 110% overcharges everyone slightly. Scaling the four percentages back down so they sum to 100, while showing "original vs normalized" in the report, is the only option that keeps the expense and keeps it honest.
-- 11. Conflicting split_type vs split_details → trust the explicit numbers over the label. If someone bothered to type in specific shares, that's a stronger signal of intent than a label that might just be a leftover default from copy-pasting the row above. Flag the inconsistency either way.
-- 12. Rounding → round half up to 2 decimal places, applied identically everywhere. Simple, standard, and the important part isn't which rule — it's using the same rule in the importer and in balance calculations, so numbers never drift by a paisa between two parts of the app.
-- 13. Messy names → normalize + exact-match after cleanup, never fuzzy-auto-create. "priya" and "Priya" should merge automatically since that's just casing. "Priya S" is a judgment call — I'd still block it rather than auto-guess it's Priya, because auto-creating a phantom "Priya S" user is a worse failure than asking once.
+## 2026-07-11 Decision: Reset dev DB after AUTH_USER_MODEL ordering mistake
+### comit : 8a110a07
+**Options considered:**
+A. Reset the local Postgres DB and regenerate migrations cleanly
+B. Hand-write a data migration to swap admin's User FK to the new model in place
+**Chosen:** A — reset the DB
+**Why:** No real data existed yet (pre-import, day 1), so a clean reset is faster and
+lower-risk than surgically rewriting Django's own admin/auth migrations, which is
+fragile and easy to get subtly wrong.
+**Tradeoff accepted:** would NOT choose this once real data exists (post-import) —
+at that point option B or a proper data migration becomes mandatory. Noting this now
+so it isn't repeated as a reflex later in the project.
+**Reversible?** yes, trivially, since it happened before any data existed.
