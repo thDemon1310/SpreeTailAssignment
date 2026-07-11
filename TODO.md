@@ -9,7 +9,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 - [x] **GATE 0:** human confirms environment runs locally end to end (empty app, but boots) before any models are written — ✅ confirmed 2026-07-10
 
 ## Phase 1 — Core models & auth
-- [ ] `User` (or extend Django's), auth endpoints (register/login/token) — own commit
+- [x] `User` (or extend Django's), auth endpoints (register/login/token) — custom User via AbstractUser in `core` app, register/me views, JWT token endpoints, 8 tests passing
 - [ ] `Group`, `Membership` (`joined_on`, `left_on` nullable) models + migrations — own commit
 - [ ] Group CRUD API (create group, add/remove member with dates) — own commit
 - [ ] `Expense`, `ExpenseSplit`, `Settlement` models + migrations — own commit
