@@ -5,8 +5,8 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 
 ## Phase 0 — Setup
 - [x] Django project + DRF + Postgres connection, `.env` config — Django 6.0.7 project in `backend/` with DRF+SimpleJWT+CORS, Postgres connected via `.env`, migrations applied, server boots on :8000
-- [ ] React (Vite) scaffold, basic routing
-- [ ] **GATE 0:** human confirms environment runs locally end to end (empty app, but boots) before any models are written
+- [x] React (Vite) scaffold, basic routing — Vite+React in `frontend/`, react-router-dom with 6 routes (dashboard/groups/expenses/balances/settle/import), JWT auth context, axios client with token refresh, premium dark-mode design system, sidebar layout
+- [x] **GATE 0:** human confirms environment runs locally end to end (empty app, but boots) before any models are written — ✅ confirmed 2026-07-10
 
 ## Phase 1 — Core models & auth
 - [ ] `User` (or extend Django's), auth endpoints (register/login/token) — own commit
