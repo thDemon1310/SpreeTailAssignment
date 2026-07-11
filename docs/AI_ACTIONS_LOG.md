@@ -25,3 +25,14 @@ initial migrate left the DB referencing the wrong User table. Caught when
 `makemigrations core` conflicted with existing admin migrations. Fixed by resetting
 the local dev database and regenerating migrations in the correct order (custom User
 model set BEFORE first migrate). No data was lost since this was pre-import.
+
+## 2026-07-11 Correction to earlier entry: AUTH_USER_MODEL fix was incomplete
+The "reset the DB" fix logged earlier did not actually resolve the root cause.
+`showmigrations` later showed core.0001_initial still unapplied while
+admin/auth/contenttypes were fully applied — meaning AUTH_USER_MODEL was not
+set BEFORE the first migrate ran, so Django still had admin.0001_initial
+depending on auth.User instead of core.User. Root cause confirmed via
+`showmigrations`, not guessed. Real fix: drop DB, confirm AUTH_USER_MODEL is
+set in settings.py first, THEN run migrate once, so Django's own dependency
+graph orders core.0001_initial correctly. This is the second time this
+surfaced — the first "fix" treated the symptom, not the cause.

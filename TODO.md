@@ -10,8 +10,8 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 
 ## Phase 1 — Core models & auth
 - [x] `User` (or extend Django's), auth endpoints (register/login/token) — custom User via AbstractUser in `core` app, register/me views, JWT token endpoints, 8 tests passing
-- [ ] `Group`, `Membership` (`joined_on`, `left_on` nullable) models + migrations — own commit
-- [ ] Group CRUD API (create group, add/remove member with dates) — own commit
+- [x] `Group`, `Membership` (`joined_on`, `left_on` nullable) models + migrations — Group with M2M through Membership, UniqueConstraint, `is_active_on()` helper, DB reset for AUTH_USER_MODEL fix, migration 0002 applied
+- [~] Group CRUD API (create group, add/remove member with dates) — own commit
 - [ ] `Expense`, `ExpenseSplit`, `Settlement` models + migrations — own commit
 - [ ] **GATE 1:** human reviews schema against PLAN.md Section 3 policies before any split logic is written. Any schema deviation from PLAN.md gets a DECISIONS.md entry first.
 
