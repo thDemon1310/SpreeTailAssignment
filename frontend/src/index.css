@@ -1,0 +1,12 @@
+:root {
+  /* Background layers */
+  --bg-primary: hsl(225, 20%, 8%);
+  --bg-sidebar: hsla(225, 22%, 10%, 0.85);
+  --bg-card: hsl(225, 18%, 12%);
+  --bg-hover: hsla(225, 20%, 18%, 0.5);
+  --bg-input: hsl(225, 18%, 14%);
+
+
+
+
+}
