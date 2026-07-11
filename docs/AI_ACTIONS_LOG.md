@@ -51,3 +51,8 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Asked for:** Expense/split/settlement models per PLAN.md Section 2, plus import pipeline models.
 **Produced:** Expense model with FX fields (original_amount, exchange_rate, currency), 4 split types enum, is_settlement flag, notes. ExpenseSplit with UniqueConstraint (one split per user per expense). Settlement separate from Expense per DECISIONS.md #4. ImportBatch for audit trail. ImportAnomaly with 18 problem_type choices covering all Phase 3 anomalies, 3 status choices, linked_expense/linked_settlement FKs, resolved_by/at. All registered in admin. Migration 0003 applied. 18 tests still passing.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-11] Phase 2 Task 1: Split calculation pure function
+**Asked for:** Standalone split calc function for all four split types, tests written first (GEMINI.md Sec 3), rounding policy from SCOPE.md #12 applied, remainder decision confirmed by human before writing.
+**Produced:** `core/split_calc.py` — `calculate_splits()` pure function (no DB access), `SplitCalcError` for invalid inputs. All four types: equal (total/n, ROUND_HALF_UP each), unequal (explicit INR amounts, rounded), percentage (total × pct/100, tolerance check for sum≠100), shares (total × share/total_shares). Remainder after rounding assigned to payer per DECISIONS.md [2026-07-11]. `core/tests_split_calc.py` — 22 tests written and run to failure first, then implementation written to pass them. 40 total tests all passing.
+**Human caught wrong / had to redirect?** No.

@@ -13,10 +13,10 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 - [x] `Group`, `Membership` (`joined_on`, `left_on` nullable) models + migrations — Group with M2M through Membership, UniqueConstraint, `is_active_on()` helper, DB reset for AUTH_USER_MODEL fix, migration 0002 applied
 - [x] Group CRUD API (create group, add/remove member with dates) — GroupListCreate, GroupDetail, add_member, update_or_remove_member views + 10 new tests (18 total) all passing
 - [x] `Expense`, `ExpenseSplit`, `Settlement` models + migrations — Expense with FX fields (original_amount, exchange_rate, currency), 4 split types, ExpenseSplit with UniqueConstraint, Settlement separate from Expense, ImportBatch + ImportAnomaly with 18 problem types and 3 statuses, migration 0003 applied
-- [ ] **GATE 1:** human reviews schema against PLAN.md Section 3 policies before any split logic is written. Any schema deviation from PLAN.md gets a DECISIONS.md entry first.
+- [x] **GATE 1:** human reviews schema against PLAN.md Section 3 policies before any split logic is written. Any schema deviation from PLAN.md gets a DECISIONS.md entry first.
 
 ## Phase 2 — Expense logic
-- [ ] Split calculation as a standalone pure function, covering equal/unequal/percentage/share — unit tests written and passing BEFORE this is wired to any view (GEMINI.md Section 3)
+- [x] Split calculation as a standalone pure function, covering equal/unequal/percentage/share — `core/split_calc.py`, pure Decimal math, ROUND_HALF_UP, payer absorbs remainder (DECISIONS.md [2026-07-11]), 22 unit tests passing, no DB access, not yet wired to any view
 - [ ] Balance calculation function: per-group and per-person, excluding expenses outside a member's `Membership` window by date — tests for the exclusion case required before wiring to a view
 - [ ] Rounding policy applied consistently in both functions above — cite the DECISIONS.md entry in the commit message
 - [ ] Expense create/list/detail API using the tested split function
