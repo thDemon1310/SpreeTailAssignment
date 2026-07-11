@@ -1,3 +1,9 @@
+/* ===== Spreetail Design System ===== */
+/* A premium dark-mode-first design with curated HSL colors */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+
+/* --- Design tokens --- */
 :root {
   /* Background layers */
   --bg-primary: hsl(225, 20%, 8%);
@@ -6,7 +12,108 @@
   --bg-hover: hsla(225, 20%, 18%, 0.5);
   --bg-input: hsl(225, 18%, 14%);
 
+  /* Text */
+  --text-primary: hsl(220, 20%, 93%);
+  --text-secondary: hsl(220, 15%, 72%);
+  --text-tertiary: hsl(220, 12%, 48%);
 
+  /* Accent palette */
+  --accent-primary: hsl(250, 80%, 65%);
+  --accent-secondary: hsl(280, 70%, 60%);
+  --accent-success: hsl(160, 70%, 45%);
+  --accent-warning: hsl(35, 90%, 55%);
+  --accent-danger: hsl(0, 70%, 60%);
 
+  /* Borders */
+  --border-subtle: hsla(220, 15%, 30%, 0.35);
 
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px hsla(0, 0%, 0%, 0.1);
+  --shadow-md: 0 4px 12px hsla(0, 0%, 0%, 0.12);
+  --shadow-lg: 0 8px 24px hsla(0, 0%, 0%, 0.15);
+}
+
+/* --- Reset & base --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* --- Global utility classes --- */
+.page {
+  max-width: 1100px;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.page-subtitle {
+  color: var(--text-tertiary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.placeholder-card {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.925rem;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsla(220, 15%, 30%, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(220, 15%, 40%, 0.6);
+}
+
+/* --- Selection --- */
+::selection {
+  background: hsla(250, 80%, 65%, 0.3);
+  color: var(--text-primary);
 }
