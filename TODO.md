@@ -19,7 +19,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 - [x] Split calculation as a standalone pure function, covering equal/unequal/percentage/share — `core/split_calc.py`, pure Decimal math, ROUND_HALF_UP, payer absorbs remainder (DECISIONS.md [2026-07-11]), 22 unit tests passing, no DB access, not yet wired to any view
 - [x] Balance calculation function: per-group and per-person, excluding expenses outside a member's `Membership` window by date — `core/balance_calc.py`, SQL-level membership window filter, zero-sum invariant guaranteed, settlement formula corrected (made-received not received-made), 15 tests passing
 - [x] Rounding policy applied consistently in both functions above — ROUND_HALF_UP to 2dp in split_calc (SCOPE.md #12), balance_calc sums stored Decimal values without re-rounding; DECISIONS.md [2026-07-11] cited
-- [ ] Expense create/list/detail API using the tested split function
+- [x] Expense create/list/detail API using the tested split function — `ExpenseCreateSerializer` calls `calculate_splits`, writes Expense + ExpenseSplit atomically via `transaction.atomic()`; `expense_list_create` (GET/POST) + `expense_detail` (GET/DELETE) views; nested under `/api/groups/<id>/expenses/`; 24 API-level tests all passing (79 total)
 - [ ] Settlement create/list API, folded into balance calc
 - [ ] **GATE 2:** human hand-checks one manual balance calculation against the test output before import work begins
 
