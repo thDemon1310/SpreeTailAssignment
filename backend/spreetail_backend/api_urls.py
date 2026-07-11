@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from core.urls import group_urlpatterns
 
 urlpatterns = [
     # JWT auth
@@ -15,4 +16,7 @@ urlpatterns = [
 
     # Auth (register, me)
     path('auth/', include('core.urls')),
+
+    # Groups
+    path('groups/', include(group_urlpatterns)),
 ]
