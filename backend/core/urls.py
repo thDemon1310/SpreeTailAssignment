@@ -6,6 +6,8 @@ from .views import (
     GroupDetailView,
     add_member,
     update_or_remove_member,
+    expense_list_create,
+    expense_detail,
 )
 
 urlpatterns = [
@@ -20,4 +22,7 @@ group_urlpatterns = [
     path('<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('<int:group_id>/members/', add_member, name='group-add-member'),
     path('<int:group_id>/members/<int:membership_id>/', update_or_remove_member, name='group-update-member'),
+    # Expense endpoints nested under groups
+    path('<int:group_id>/expenses/', expense_list_create, name='group-expense-list-create'),
+    path('<int:group_id>/expenses/<int:expense_id>/', expense_detail, name='group-expense-detail'),
 ]

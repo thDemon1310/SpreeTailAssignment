@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from .models import Group, Membership
+from .models import Expense, Group, Membership
 from .serializers import (
     RegisterSerializer,
     UserSerializer,
@@ -13,6 +13,9 @@ from .serializers import (
     AddMemberSerializer,
     UpdateMemberSerializer,
     MembershipSerializer,
+    ExpenseListSerializer,
+    ExpenseSerializer,
+    ExpenseCreateSerializer,
 )
 
 User = get_user_model()
@@ -141,3 +144,80 @@ def update_or_remove_member(request, group_id, membership_id):
         membership.save(update_fields=['left_on'])
 
     return Response(MembershipSerializer(membership).data)
+
+
+# --------------- Expenses ---------------
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def expense_list_create(request, group_id):
+    """
+    GET  /api/groups/<group_id>/expenses/  — list all expenses in the group
+    POST /api/groups/<group_id>/expenses/  — create a new expense
+
+    Only members of the group may access this endpoint.
+    POST calls calculate_splits internally and writes ExpenseSplit rows
+    atomically — if split validation fails, nothing is saved.
+    """
+    group = get_object_or_404(Group, id=group_id)
+
+    if not group.memberships.filter(user=request.user).exists():
+        return Response(
+            {'detail': 'You are not a member of this group.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if request.method == 'GET':
+        expenses = (
+            Expense.objects.filter(group=group)
+            .select_related('paid_by')
+            .order_by('-date', '-created_at')
+        )
+        serializer = ExpenseListSerializer(expenses, many=True)
+        return Response(serializer.data)
+
+    # POST
+    serializer = ExpenseCreateSerializer(
+        data=request.data,
+        context={'group': group, 'request': request},
+    )
+    serializer.is_valid(raise_exception=True)
+    expense = serializer.save()
+    # Return full detail representation after creation
+    return Response(
+        ExpenseSerializer(expense).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['GET', 'DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def expense_detail(request, group_id, expense_id):
+    """
+    GET    /api/groups/<group_id>/expenses/<expense_id>/  — full expense + splits
+    DELETE /api/groups/<group_id>/expenses/<expense_id>/  — delete expense + its splits
+
+    Deleting an expense cascades to its ExpenseSplit rows (FK on_delete=CASCADE).
+    No PATCH: editing a split type after creation requires re-running split_calc
+    and atomically replacing all splits — that is out of scope for this task.
+    """
+    group = get_object_or_404(Group, id=group_id)
+
+    if not group.memberships.filter(user=request.user).exists():
+        return Response(
+            {'detail': 'You are not a member of this group.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    expense = get_object_or_404(
+        Expense.objects.select_related('paid_by').prefetch_related('splits__user'),
+        id=expense_id,
+        group=group,
+    )
+
+    if request.method == 'DELETE':
+        expense.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    return Response(ExpenseSerializer(expense).data)
