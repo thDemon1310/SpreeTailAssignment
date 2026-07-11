@@ -36,3 +36,18 @@ depending on auth.User instead of core.User. Root cause confirmed via
 set in settings.py first, THEN run migrate once, so Django's own dependency
 graph orders core.0001_initial correctly. This is the second time this
 surfaced — the first "fix" treated the symptom, not the cause.
+
+## [2026-07-11] Phase 1 Task 2: Group + Membership models
+**Asked for:** Group and Membership models with join/leave dates.
+**Produced:** Group model with M2M through Membership, `is_active_on()` helper, UniqueConstraint (one membership per user per group), admin registration with inline editing. DB reset was needed due to AUTH_USER_MODEL inconsistency (documented above). Migration 0002 applied.
+**Human caught wrong / had to redirect?** No — the DB reset was a direct fix for the root cause, not a workaround.
+
+## [2026-07-11] Phase 1 Task 3: Group CRUD API
+**Asked for:** Create/list/detail/update/delete group, add/remove member with dates.
+**Produced:** `GroupListCreateView`, `GroupDetailView`, `add_member`, `update_or_remove_member` views. `GroupCreateSerializer` auto-adds creator as first member. `AddMemberSerializer` and `UpdateMemberSerializer` for membership management. Permission checks (only group members can manage). 10 new tests (5 group CRUD + 5 membership) — 18 total, all passing.
+**Human caught wrong / had to redirect?** No.
+
+## [2026-07-11] Phase 1 Task 4: Expense, ExpenseSplit, Settlement, ImportBatch, ImportAnomaly models
+**Asked for:** Expense/split/settlement models per PLAN.md Section 2, plus import pipeline models.
+**Produced:** Expense model with FX fields (original_amount, exchange_rate, currency), 4 split types enum, is_settlement flag, notes. ExpenseSplit with UniqueConstraint (one split per user per expense). Settlement separate from Expense per DECISIONS.md #4. ImportBatch for audit trail. ImportAnomaly with 18 problem_type choices covering all Phase 3 anomalies, 3 status choices, linked_expense/linked_settlement FKs, resolved_by/at. All registered in admin. Migration 0003 applied. 18 tests still passing.
+**Human caught wrong / had to redirect?** No.
