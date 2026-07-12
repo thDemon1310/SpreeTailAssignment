@@ -12,6 +12,11 @@ export default function GroupsPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDesc, setNewGroupDesc] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
+  const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+  const [addUsername, setAddUsername] = useState('');
+  const [addJoinedOn, setAddJoinedOn] = useState(new Date().toISOString().split('T')[0]);
+  const [addMemberError, setAddMemberError] = useState('');
+  const [addMemberLoading, setAddMemberLoading] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -35,6 +40,10 @@ export default function GroupsPage() {
   const selectGroup = async (group) => {
     setSelectedGroup(group);
     setLoading(true);
+    setShowAddMemberForm(false);
+    setAddUsername('');
+    setAddJoinedOn(new Date().toISOString().split('T')[0]);
+    setAddMemberError('');
     try {
       const { data } = await api.get(`/groups/${group.id}/expenses/`);
       setExpenses(data);
@@ -42,6 +51,53 @@ export default function GroupsPage() {
       setError('Failed to load expenses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    if (!addUsername.trim()) {
+      setAddMemberError('Username is required.');
+      return;
+    }
+    setAddMemberLoading(true);
+    setAddMemberError('');
+    try {
+      await api.post(`/groups/${selectedGroup.id}/members/`, {
+        username: addUsername.trim(),
+        joined_on: addJoinedOn,
+      });
+      // Fetch updated group detail to refresh members list
+      const { data } = await api.get(`/groups/${selectedGroup.id}/`);
+      setSelectedGroup(data);
+      // Update this group in the groups list
+      setGroups(groups.map(g => g.id === data.id ? data : g));
+      setAddUsername('');
+      setAddJoinedOn(new Date().toISOString().split('T')[0]);
+      setShowAddMemberForm(false);
+    } catch (err) {
+      const data = err.response?.data;
+      let errMsg = 'Failed to add member';
+      if (data) {
+        if (typeof data === 'object') {
+          if (data.detail) {
+            errMsg = data.detail;
+          } else {
+            const fieldErrors = Object.entries(data).map(([key, val]) => {
+              const displayVal = Array.isArray(val) ? val[0] : val;
+              return `${key}: ${displayVal}`;
+            });
+            if (fieldErrors.length > 0) {
+              errMsg = fieldErrors.join(', ');
+            }
+          }
+        } else if (typeof data === 'string') {
+          errMsg = data;
+        }
+      }
+      setAddMemberError(errMsg);
+    } finally {
+      setAddMemberLoading(false);
     }
   };
 
@@ -124,7 +180,44 @@ export default function GroupsPage() {
                 <h2>{selectedGroup.name}</h2>
                 <p className="group-desc">{selectedGroup.description}</p>
                 <div className="members-section">
-                  <h3>Members</h3>
+                  <div className="section-header-row">
+                    <h3>Members</h3>
+                    <button className="btn secondary" onClick={() => setShowAddMemberForm(!showAddMemberForm)}>
+                      {showAddMemberForm ? 'Cancel' : 'Add Member'}
+                    </button>
+                  </div>
+
+                  {showAddMemberForm && (
+                    <div className="add-member-form-card">
+                      <h4>Add Member to Group</h4>
+                      <form onSubmit={handleAddMember} className="add-member-form">
+                        <div className="form-group">
+                          <label>Username or Email</label>
+                          <input 
+                            type="text" 
+                            value={addUsername} 
+                            onChange={e => setAddUsername(e.target.value)} 
+                            required 
+                            placeholder="e.g. rohan"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Joined On</label>
+                          <input 
+                            type="date" 
+                            value={addJoinedOn} 
+                            onChange={e => setAddJoinedOn(e.target.value)} 
+                            required 
+                          />
+                        </div>
+                        <button type="submit" className="add-member-btn" disabled={addMemberLoading}>
+                          {addMemberLoading ? 'Adding...' : 'Add Member'}
+                        </button>
+                      </form>
+                      {addMemberError && <div className="add-member-error">{addMemberError}</div>}
+                    </div>
+                  )}
+
                   <table className="members-table">
                     <thead>
                       <tr>

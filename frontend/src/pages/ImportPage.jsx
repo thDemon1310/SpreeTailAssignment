@@ -41,7 +41,7 @@ export default function ImportPage() {
       const reader = new FileReader();
       reader.onload = (evt) => {
         const text = evt.target.result;
-        const lines = text.split('\\n').filter(l => l.trim());
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
         if (lines.length > 0) {
           const headers = lines[0].split(',');
           const rows = lines.slice(1, 4).map(l => l.split(','));

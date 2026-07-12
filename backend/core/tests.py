@@ -180,6 +180,34 @@ class MembershipManagementTest(TestCase):
         self.assertEqual(resp.data['username'], 'rohan')
         self.assertEqual(resp.data['joined_on'], '2026-02-01')
 
+    def test_add_member_by_username(self):
+        resp = self.client.post(f'/api/groups/{self.group_id}/members/', {
+            'username': 'rohan',
+            'joined_on': '2026-02-01',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['username'], 'rohan')
+        self.assertEqual(resp.data['joined_on'], '2026-02-01')
+
+    def test_add_member_by_email(self):
+        self.rohan.email = 'rohan@example.com'
+        self.rohan.save()
+        resp = self.client.post(f'/api/groups/{self.group_id}/members/', {
+            'username': 'rohan@example.com',
+            'joined_on': '2026-02-01',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['username'], 'rohan')
+        self.assertEqual(resp.data['joined_on'], '2026-02-01')
+
+    def test_add_member_nonexistent_username(self):
+        resp = self.client.post(f'/api/groups/{self.group_id}/members/', {
+            'username': 'nonexistentuser',
+            'joined_on': '2026-02-01',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('User does not exist.', str(resp.data))
+
     def test_add_duplicate_member(self):
         self.client.post(f'/api/groups/{self.group_id}/members/', {
             'user_id': self.rohan.id, 'joined_on': '2026-02-01',

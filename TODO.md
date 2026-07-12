@@ -57,6 +57,8 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Settle-up flow
 - [x] Import report screen (trigger import, show anomaly table + resolutions, nothing pre-applied silently) - *built generic resolution API and UI for blocked anomalies*
 - [x] Add "Create Group" UI to GroupsPage - *added inline form in page header submitting to POST /groups/*
+- [x] Add member to existing group from UI (direct-add) — Added inline form to selected group view & updated backend view/serializer to query via username or email
+- [x] Fix broken Import preview UI (newline split bug) — Corrected file reader string split regex to handle standard carriage-return/newline characters properly
 - [ ] **GATE 4:** human walks through the full UI once, end to end, before deploy
 
 ## Phase 5 — Optional AI/LLM feature (bonus — do not start until Phases 0–4 are done and gated)

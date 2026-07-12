@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import serializers
 
 User = get_user_model()
@@ -92,13 +93,22 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
 class AddMemberSerializer(serializers.Serializer):
     """Serializer for adding a member to a group."""
-    user_id = serializers.IntegerField()
+    user_id = serializers.IntegerField(required=False)
+    username = serializers.CharField(required=False)
     joined_on = serializers.DateField()
 
-    def validate_user_id(self, value):
-        if not User.objects.filter(id=value).exists():
-            raise serializers.ValidationError("User does not exist.")
-        return value
+    def validate(self, attrs):
+        user_id = attrs.get('user_id')
+        username = attrs.get('username')
+        if not user_id and not username:
+            raise serializers.ValidationError("Either user_id or username is required.")
+        if user_id:
+            if not User.objects.filter(id=user_id).exists():
+                raise serializers.ValidationError({"user_id": "User does not exist."})
+        elif username:
+            if not User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username)).exists():
+                raise serializers.ValidationError({"username": "User does not exist."})
+        return attrs
 
 
 class UpdateMemberSerializer(serializers.Serializer):

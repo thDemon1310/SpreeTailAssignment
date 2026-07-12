@@ -86,3 +86,18 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Asked for:** Prepare backend for Render and frontend for Vercel, using Railway Postgres.
 **Produced:** Added `gunicorn`, `dj-database-url`, `whitenoise` to backend requirements. Updated `settings.py` to securely parse `DATABASE_URL` via `dj_database_url` (with fallback to dev), use `whitenoise` for static files, and dynamically load `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DEBUG`, and `SECRET_KEY` from environment variables. Created `backend/build.sh` for Render build process. Confirmed `VITE_API_URL` usage in frontend API client.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-12] Task 1: Add members to a group
+**Asked for:** Implement "Add Member" control on the group detail view. Needs username/email lookup and hit the existing Membership model on the backend, handling nonexistent user errors inline.
+**Produced:**
+- Modified `backend/core/serializers.py` to make `user_id` optional and accept `username` in `AddMemberSerializer`, checking user existence against both username and email (case-insensitive) using `Q`.
+- Modified `backend/core/views.py` `add_member` endpoint to dynamically retrieve user by `username`/`email` when `user_id` is not supplied.
+- Modified `backend/core/tests.py` to add 3 new API unit tests verifying direct membership addition via username and email, plus error responses.
+- Implemented an inline collapsible "Add Member" form inside the selected group detail card in `GroupsPage.jsx`, styled matching the rest of the application via `GroupsPage.css`. Updates local states upon successful membership creation and fetch.
+**Human caught wrong / had to redirect?** No.
+
+## [2026-07-12] Task 2: Fix the broken Import preview UI
+**Asked for:** Diagnose and fix the broken Import preview step rendering.
+**Produced:**
+- Corrected line-splitting in `handleFileChange` within `frontend/src/pages/ImportPage.jsx` from `.split('\\n')` to `.split(/\r?\n/)` to properly parse lines and prevent headers from parsing as a single line with empty rows.
+**Human caught wrong / had to redirect?** No.

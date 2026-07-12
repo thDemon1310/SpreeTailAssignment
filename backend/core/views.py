@@ -100,7 +100,19 @@ def add_member(request, group_id):
     serializer = AddMemberSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    user = get_object_or_404(User, id=serializer.validated_data['user_id'])
+    user_id = serializer.validated_data.get('user_id')
+    username = serializer.validated_data.get('username')
+
+    from django.db.models import Q
+    if user_id:
+        user = get_object_or_404(User, id=user_id)
+    else:
+        user = User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username)).first()
+        if not user:
+            return Response(
+                {'detail': 'User does not exist.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     # Check for existing membership
     if group.memberships.filter(user=user).exists():
