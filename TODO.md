@@ -50,7 +50,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 
 ## Phase 4 — Frontend
 - [x] Login/auth flow (already implemented in scaffolding via `LoginPage.jsx`, `RegisterPage.jsx`, and JWT api/client.js interceptors)
-- [ ] Group view: members with join/leave dates, expense list
+- [x] Group view: members with join/leave dates, expense list
 - [ ] Add expense form supporting all 4 split types
 - [ ] Balance summary — Aisha's "one number per person" view
 - [ ] Balance drill-down showing the underlying ExpenseSplit/Settlement rows behind each number — Rohan's "no magic numbers" view; this must query real rows, not recompute in the frontend

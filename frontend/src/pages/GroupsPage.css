@@ -1,0 +1,117 @@
+.groups-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.groups-container {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.group-sidebar {
+  width: 250px;
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  align-self: flex-start;
+}
+
+.group-sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.group-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.group-list li {
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #555;
+  font-weight: 500;
+}
+
+.group-list li:hover {
+  background: #f5f7fa;
+}
+
+.group-list li.active {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.group-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.group-card {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.group-card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.group-desc {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.members-section h3, .expenses-header h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.members-table, .expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.members-table th, .expenses-table th {
+  text-align: left;
+  padding: 10px;
+  color: #666;
+  font-weight: 600;
+  border-bottom: 2px solid #eee;
+}
+
+.members-table td, .expenses-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.inactive-member {
+  color: #999;
+  text-decoration: line-through;
+}
+
+.expenses-section {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
