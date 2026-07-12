@@ -81,7 +81,6 @@ export default function ImportPage() {
   };
 
   if (loading) return <div className="page">Loading...</div>;
-  if (!selectedGroup) return <div className="page">No group selected.</div>;
 
   return (
     <div className="page import-page">
@@ -90,71 +89,79 @@ export default function ImportPage() {
         <p className="page-subtitle">Import CSV and resolve blocked entries</p>
       </div>
       
-      <div className="card">
-        <div className="form-group mb-4">
-          <label>Select Group</label>
-          <select 
-            value={selectedGroup.id} 
-            onChange={e => setSelectedGroup(groups.find(g => g.id === parseInt(e.target.value, 10)))}
-            style={{ padding: '0.5rem', width: '100%', maxWidth: '300px', display: 'block' }}
-          >
-            {groups.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
+      {groups.length === 0 ? (
+        <div className="placeholder-card">
+          <p>You must be in a group to import expenses.</p>
         </div>
+      ) : (
+        <>
+          <div className="card">
+            <div className="form-group mb-4">
+              <label>Select Group</label>
+              <select 
+                value={selectedGroup?.id || ''} 
+                onChange={e => setSelectedGroup(groups.find(g => g.id === parseInt(e.target.value, 10)))}
+                style={{ padding: '0.5rem', width: '100%', maxWidth: '300px', display: 'block' }}
+              >
+                {groups.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
 
-        <form onSubmit={handleUpload} className="upload-form m-0">
-          <input type="file" accept=".csv" onChange={handleFileChange} />
-          <button type="submit" disabled={uploading || !file}>
-            {uploading ? "Importing..." : "Run Import"}
-          </button>
-          {error && <div className="error-text">{error}</div>}
-        </form>
-      </div>
-
-      {batch && (
-        <div className="card batch-summary">
-          <h3>Import Summary</h3>
-          <div className="summary-stats">
-            <div>
-              <strong>{batch.total_rows_processed}</strong> Processed
-            </div>
-            <div>
-              <strong>{batch.imported_rows}</strong> Imported
-            </div>
-            <div>
-              <strong>{batch.skipped_rows}</strong> Skipped
-            </div>
+            <form onSubmit={handleUpload} className="upload-form m-0">
+              <input type="file" accept=".csv" onChange={handleFileChange} />
+              <button type="submit" disabled={uploading || !file}>
+                {uploading ? "Importing..." : "Run Import"}
+              </button>
+              {error && <div className="error-text">{error}</div>}
+            </form>
           </div>
-        </div>
-      )}
 
-      {anomalies.length > 0 && (
-        <div className="anomalies-section">
-          <h3>Anomalies</h3>
-          <table className="anomalies-table">
-            <thead>
-              <tr>
-                <th>Row</th>
-                <th>Issue</th>
-                <th>Raw Data</th>
-                <th>Status</th>
-                <th>Resolution</th>
-              </tr>
-            </thead>
-            <tbody>
-              {anomalies.map(a => (
-                <AnomalyRow 
-                  key={a.id} 
-                  anomaly={a} 
-                  members={selectedGroup.memberships} 
-                  onResolve={handleResolve} 
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+          {batch && (
+            <div className="card batch-summary">
+              <h3>Import Summary</h3>
+              <div className="summary-stats">
+                <div>
+                  <strong>{batch.total_rows_processed}</strong> Processed
+                </div>
+                <div>
+                  <strong>{batch.imported_rows}</strong> Imported
+                </div>
+                <div>
+                  <strong>{batch.skipped_rows}</strong> Skipped
+                </div>
+              </div>
+            </div>
+          )}
+
+          {anomalies.length > 0 && (
+            <div className="anomalies-section">
+              <h3>Anomalies</h3>
+              <table className="anomalies-table">
+                <thead>
+                  <tr>
+                    <th>Row</th>
+                    <th>Issue</th>
+                    <th>Raw Data</th>
+                    <th>Status</th>
+                    <th>Resolution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {anomalies.map(a => (
+                    <AnomalyRow 
+                      key={a.id} 
+                      anomaly={a} 
+                      members={selectedGroup?.memberships || []} 
+                      onResolve={handleResolve} 
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
