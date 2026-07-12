@@ -18,6 +18,7 @@ from .serializers import (
     ExpenseListSerializer,
     ExpenseSerializer,
     ExpenseCreateSerializer,
+    SettlementSerializer,
 )
 
 User = get_user_model()
@@ -223,6 +224,54 @@ def expense_detail(request, group_id, expense_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     return Response(ExpenseSerializer(expense).data)
+
+
+# --------------- Settlements ---------------
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def settlement_list_create(request, group_id):
+    """
+    GET  /api/groups/<group_id>/settlements/
+    POST /api/groups/<group_id>/settlements/
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member.'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if request.method == 'GET':
+        settlements = Settlement.objects.filter(group=group).order_by('-date')
+        return Response(SettlementSerializer(settlements, many=True).data)
+    
+    # POST
+    # expects: from_user_id, to_user_id, amount, date
+    from_user_id = request.data.get('from_user_id')
+    to_user_id = request.data.get('to_user_id')
+    amount = request.data.get('amount')
+    date = request.data.get('date')
+    
+    if not all([from_user_id, to_user_id, amount, date]):
+        return Response({'detail': 'from_user_id, to_user_id, amount, date are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        amount = Decimal(str(amount))
+        if amount <= Decimal('0'):
+            return Response({'detail': 'amount must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        return Response({'detail': 'Invalid amount.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    from_user = get_object_or_404(User, id=from_user_id)
+    to_user = get_object_or_404(User, id=to_user_id)
+    
+    settlement = Settlement.objects.create(
+        group=group,
+        from_user=from_user,
+        to_user=to_user,
+        amount=amount,
+        date=date
+    )
+    
+    return Response(SettlementSerializer(settlement).data, status=status.HTTP_201_CREATED)
 
 
 # --------------- Balances ---------------

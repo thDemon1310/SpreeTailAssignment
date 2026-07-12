@@ -44,7 +44,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 # --------------- Group / Membership ---------------
 
-from .models import Expense, ExpenseSplit, Group, Membership
+from .models import Expense, ExpenseSplit, Group, Membership, Settlement
 
 
 class MembershipSerializer(serializers.ModelSerializer):
@@ -324,3 +324,18 @@ class ExpenseCreateSerializer(serializers.Serializer):
             ])
 
         return expense
+
+
+class SettlementSerializer(serializers.ModelSerializer):
+    """Serializer for Settlement rows."""
+    from_username = serializers.CharField(source='from_user.username', read_only=True)
+    to_username = serializers.CharField(source='to_user.username', read_only=True)
+
+    class Meta:
+        model = Settlement
+        fields = (
+            'id', 'group', 'from_user', 'from_username',
+            'to_user', 'to_username',
+            'amount', 'date', 'created_at'
+        )
+        read_only_fields = ('id', 'group', 'from_username', 'to_username', 'created_at')

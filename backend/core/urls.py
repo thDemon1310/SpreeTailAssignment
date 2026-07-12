@@ -10,6 +10,7 @@ from .views import (
     expense_detail,
     group_balances,
     group_user_balance_detail,
+    settlement_list_create,
 )
 
 urlpatterns = [
@@ -27,6 +28,8 @@ group_urlpatterns = [
     # Expense endpoints nested under groups
     path('<int:group_id>/expenses/', expense_list_create, name='group-expense-list-create'),
     path('<int:group_id>/expenses/<int:expense_id>/', expense_detail, name='group-expense-detail'),
+    # Settlements
+    path('<int:group_id>/settlements/', settlement_list_create, name='group-settlement-list-create'),
     # Balances
     path('<int:group_id>/balances/', group_balances, name='group-balances'),
     path('<int:group_id>/balances/<int:user_id>/', group_user_balance_detail, name='group-user-balance'),
