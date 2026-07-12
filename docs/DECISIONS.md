@@ -128,3 +128,12 @@ B. Default to INR (the dominant currency of the dataset).
 **Why:** While missing payer has no reliable default, almost every row in the dataset is in INR. Assuming INR is a low-risk inference rather than a blind guess. Blocking every missing currency row creates unnecessary friction when the inference is highly likely to be correct.
 **Tradeoff accepted:** A missing currency that was actually meant to be USD will be incorrectly imported as INR. This is mitigated by ensuring the assumption is flagged visibly in the import report so it can be caught.
 **Reversible?** Yes, by manually correcting the currency in the UI or re-importing.
+
+## [2026-07-12] Decision: Ambiguous date detection
+**Options considered:**
+A. Purely structural: block any date where day <= 12 and month <= 12.
+B. Text-signaled: block if structural condition holds AND note explicitly mentions confusion (e.g. "April", "May", "wrong").
+**Chosen:** B — Text-signaled structural ambiguity.
+**Why:** Option A would produce too many false positives since dates like 04-05 are perfectly valid structurally. We rely on the note field casting doubt on the format, which explicitly flags the ambiguity in the human's mind.
+**Tradeoff accepted:** If a date is structurally ambiguous but the user didn't write a note questioning it, we blindly accept the ISO-8601 interpretation. This is acceptable because without a note, there is no signal of error.
+**Reversible?** Yes, the date can be edited in the UI to the correct interpretation.
