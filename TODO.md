@@ -54,7 +54,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Add expense form supporting all 4 split types
 - [x] Balance summary — Aisha's "one number per person" view
 - [x] Balance drill-down showing the underlying ExpenseSplit/Settlement rows behind each number — Rohan's "no magic numbers" view; this must query real rows, not recompute in the frontend
-- [ ] Settle-up flow
+- [x] Settle-up flow
 - [ ] Import report screen (trigger import, show anomaly table + resolutions, nothing pre-applied silently)
 - [ ] **GATE 4:** human walks through the full UI once, end to end, before deploy
 
