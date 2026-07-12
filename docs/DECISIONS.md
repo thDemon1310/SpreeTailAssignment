@@ -139,3 +139,12 @@ B. Trust split_details (explicit shares) and infer split_type from the format.
   - If it fails to parse, fallback to `equal`.
 **Tradeoff accepted:** If someone meant "equal" and copy-pasted leftover `split_details` by accident, we will incorrectly apply an unequal split. However, this is visible in the UI and can be manually corrected.
 **Reversible?** Yes, the expense can be edited via the UI to an equal split.
+
+## [2026-07-12] Decision: Generic vs Per-Type Anomaly Resolution API
+**Options considered:** 
+A. Generic endpoint (`POST /anomalies/{id}/resolve/`) handling "apply" and "discard" actions globally.
+B. Per-type resolution endpoints (e.g. `POST /anomalies/{id}/resolve_bad_date/`) with specific validation schemas.
+**Chosen:** Option A (Generic endpoint).
+**Why:** All blocked anomaly types reduce to the same functional shape: the human supplies missing or corrected fields, and the row either proceeds to creation or gets discarded. A single endpoint can route the payload through specific validation checks based on `problem_type` without the routing overhead of many distinct endpoints, accommodating the strict time constraints.
+**Tradeoff accepted:** The generic endpoint pushes schema validation logic into the view layer rather than leaning on strict per-type Django REST Framework serializers. We lose self-documenting API schemas (like Swagger/OpenAPI) for the specific `corrected_data` shapes required by each anomaly.
+**Reversible?** Yes — we can later split the generic endpoint into individual ones or introduce polymorphic DRF serializers without changing the underlying `ImportAnomaly` database model.

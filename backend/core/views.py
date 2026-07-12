@@ -416,3 +416,166 @@ def import_anomalies(request, group_id, batch_id):
     anomalies = ImportAnomaly.objects.filter(batch=batch).order_by('row_number')
     return Response(ImportAnomalySerializer(anomalies, many=True).data)
 
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def resolve_anomaly(request, group_id, anomaly_id):
+    """
+    POST /api/groups/<group_id>/anomalies/<anomaly_id>/resolve/
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member.'}, status=status.HTTP_403_FORBIDDEN)
+        
+    anomaly = get_object_or_404(ImportAnomaly, id=anomaly_id, batch__group=group)
+    if anomaly.status != 'blocked':
+        return Response({'detail': 'Anomaly is not blocked.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    action = request.data.get('action')
+    if action not in ['apply', 'discard']:
+        return Response({'detail': 'Invalid action.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if action == 'discard':
+        anomaly.status = 'manually_resolved'
+        anomaly.action_taken = 'Discarded by user'
+        anomaly.resolved_by = request.user
+        from django.utils import timezone
+        anomaly.resolved_at = timezone.now()
+        anomaly.save()
+        return Response({'detail': 'Discarded.'})
+        
+    # Apply
+    corrected_data = request.data.get('corrected_data', {})
+    ptype = anomaly.problem_type
+    
+    # Validation per type
+    if ptype == 'missing_payer' and 'paid_by_id' not in corrected_data:
+        return Response({'detail': 'paid_by_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if ptype == 'bad_date' and 'date' not in corrected_data:
+        return Response({'detail': 'date is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if ptype in ['zero_amount', 'missing_amount'] and 'amount' not in corrected_data:
+        return Response({'detail': 'amount is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if ptype == 'settlement_as_expense':
+        for f in ['from_user_id', 'to_user_id', 'amount', 'date']:
+            if f not in corrected_data:
+                return Response({'detail': f'{f} is required.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+    # Create the row
+    from django.utils import timezone
+    raw = anomaly.raw_data.copy()
+    
+    if ptype == 'settlement_as_expense':
+        # Create Settlement
+        from .models import Settlement
+        s = Settlement.objects.create(
+            group=group,
+            from_user_id=corrected_data['from_user_id'],
+            to_user_id=corrected_data['to_user_id'],
+            amount=corrected_data['amount'],
+            date=corrected_data['date'],
+            note=raw.get('description', '')
+        )
+        anomaly.linked_settlement = s
+    else:
+        # Create Expense
+        from .importer import _build_member_lookup, _resolve_names, USD_TO_INR
+        from .split_calc import calculate_splits
+        from .models import Expense, ExpenseSplit
+        from decimal import Decimal
+        from django.utils.dateparse import parse_date
+        
+        name_to_user, all_time = _build_member_lookup(group)
+        
+        paid_by_id = corrected_data.get('paid_by_id')
+        if not paid_by_id:
+            paid_by_raw = raw.get('paid_by', '').strip()
+            res_payer, _ = _resolve_names([paid_by_raw], name_to_user)
+            if res_payer:
+                paid_by_id = res_payer[0].id
+                
+        if not paid_by_id:
+            return Response({'detail': 'paid_by_id could not be resolved.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        paid_by_user = User.objects.get(id=paid_by_id)
+        
+        amt_str = str(corrected_data.get('amount', raw.get('amount', '0')))
+        try:
+            amount_val = Decimal(amt_str)
+        except Exception:
+            amount_val = Decimal('0')
+            
+        is_neg = False
+        if amount_val < 0:
+            is_neg = True
+            amount_val = abs(amount_val)
+            
+        curr = raw.get('currency', 'INR').strip().upper()
+        
+        if curr == 'USD':
+            amount_inr = amount_val * USD_TO_INR
+            orig = amount_val
+            rate = USD_TO_INR
+        else:
+            amount_inr = amount_val
+            orig = None
+            rate = None
+            curr = 'INR'
+            
+        date_str = corrected_data.get('date', raw.get('date', ''))
+        exp_date = parse_date(date_str)
+        if not exp_date:
+            exp_date = timezone.now().date()
+            
+        split_type = raw.get('split_type', 'equal').strip().lower() or 'equal'
+        split_with_raw = raw.get('split_with', '')
+        names = [n.strip() for n in split_with_raw.replace(';', ',').split(',') if n.strip()]
+        if not names:
+            names = [paid_by_user.username]
+        resolved_users, _ = _resolve_names(names, name_to_user)
+        part_ids = [u.id for u in resolved_users]
+        if paid_by_id not in part_ids and split_type == 'equal':
+            part_ids.append(paid_by_id)
+            
+        if not part_ids:
+            return Response({'detail': 'No valid participants found.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        splits = calculate_splits(
+            total=amount_inr,
+            split_type='equal', # fallback to equal for generic resolution to save time
+            participant_ids=part_ids,
+            paid_by_id=paid_by_id,
+            split_details={}
+        )
+        
+        if is_neg:
+            amount_inr = -amount_inr
+            if orig: orig = -orig
+            splits = {k: -v for k,v in splits.items()}
+            
+        from django.db import transaction
+        with transaction.atomic():
+            e = Expense.objects.create(
+                group=group,
+                paid_by=paid_by_user,
+                description=raw.get('description', '').strip(),
+                amount=amount_inr,
+                currency=curr,
+                original_amount=orig,
+                exchange_rate=rate,
+                date=exp_date,
+                split_type='equal',
+            )
+            ExpenseSplit.objects.bulk_create([
+                ExpenseSplit(expense=e, user_id=uid, share_amount=s)
+                for uid, s in splits.items()
+            ])
+        anomaly.linked_expense = e
+        
+    anomaly.status = 'manually_resolved'
+    anomaly.action_taken = 'Applied corrected data'
+    anomaly.resolved_by = request.user
+    anomaly.resolved_at = timezone.now()
+    anomaly.save()
+    
+    return Response({'detail': 'Resolved.'})
+
