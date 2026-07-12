@@ -1,10 +1,12 @@
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from .models import Expense, Group, Membership
+from .models import Expense, ExpenseSplit, Group, Membership, Settlement
+from .balance_calc import calculate_balances, calculate_user_balance
 from .serializers import (
     RegisterSerializer,
     UserSerializer,
@@ -221,3 +223,83 @@ def expense_detail(request, group_id, expense_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     return Response(ExpenseSerializer(expense).data)
+
+
+# --------------- Balances ---------------
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def group_balances(request, group_id):
+    """
+    GET /api/groups/<group_id>/balances/
+    Returns {user_id: Decimal_balance} for all members/payers.
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member of this group.'}, status=status.HTTP_403_FORBIDDEN)
+    
+    balances = calculate_balances(group_id)
+    return Response(balances)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def group_user_balance_detail(request, group_id, user_id):
+    """
+    GET /api/groups/<group_id>/balances/<user_id>/
+    Returns balance + drill-down of underlying rows for Rohan's 'no magic numbers' view.
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member of this group.'}, status=status.HTTP_403_FORBIDDEN)
+    
+    target_user = get_object_or_404(User, id=user_id)
+    
+    balance = calculate_user_balance(group_id, target_user.id)
+    
+    # Underlying queries
+    paid_expenses = Expense.objects.filter(group=group, paid_by=target_user)
+    
+    membership = Membership.objects.filter(group=group, user=target_user).first()
+    if membership:
+        owed_splits = ExpenseSplit.objects.filter(
+            user=target_user,
+            expense__group=group,
+            expense__date__gte=membership.joined_on
+        ).select_related('expense')
+        if membership.left_on:
+            owed_splits = owed_splits.filter(expense__date__lte=membership.left_on)
+    else:
+        owed_splits = ExpenseSplit.objects.none()
+
+    settlements_made = Settlement.objects.filter(group=group, from_user=target_user)
+    settlements_received = Settlement.objects.filter(group=group, to_user=target_user)
+
+    from django.db.models import Sum
+    ZERO = Decimal('0.00')
+
+    # DRF JSONRenderer handles Decimal serialization automatically
+    return Response({
+        'balance': balance,
+        'total_paid': paid_expenses.aggregate(total=Sum('amount'))['total'] or ZERO,
+        'paid_expenses': [
+            {'id': e.id, 'description': e.description, 'amount': e.amount, 'date': e.date}
+            for e in paid_expenses.order_by('-date')
+        ],
+        'total_owed': owed_splits.aggregate(total=Sum('share_amount'))['total'] or ZERO,
+        'owed_splits': [
+            {'id': s.id, 'expense': {'id': s.expense.id, 'description': s.expense.description, 'date': s.expense.date}, 'share_amount': s.share_amount}
+            for s in owed_splits.order_by('-expense__date')
+        ],
+        'settlements_made': settlements_made.aggregate(total=Sum('amount'))['total'] or ZERO,
+        'settlements_made_list': [
+            {'id': s.id, 'to_user_id': s.to_user_id, 'amount': s.amount, 'date': s.date}
+            for s in settlements_made.order_by('-date')
+        ],
+        'settlements_received': settlements_received.aggregate(total=Sum('amount'))['total'] or ZERO,
+        'settlements_received_list': [
+            {'id': s.id, 'from_user_id': s.from_user_id, 'amount': s.amount, 'date': s.date}
+            for s in settlements_received.order_by('-date')
+        ]
+    })
+
