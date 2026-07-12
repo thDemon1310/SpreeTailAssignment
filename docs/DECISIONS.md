@@ -119,3 +119,12 @@ C. Block the row for manual review if exactly 2 of 3 match.
 **Why:** A row that matches 2 signals (e.g. single recipient + "paid back" description, but non-blank split_type) is ambiguous. It might be a settlement where the user accidentally left split_type as "equal", or a real deposit/expense with a confusing description. Option A silently imports it as an expense, breaking balances. Option B silently assumes it's a settlement, risking data loss if it was a real expense. Option C forces the human to disambiguate the edge case.
 **Tradeoff accepted:** Increased friction during import. The user has to manually review and resolve these ambiguous rows rather than the system handling them automatically. Safe over silent.
 **Reversible?** Yes, the detection threshold is isolated to the importer function and can be adjusted on future imports.
+
+## [2026-07-12] Decision: Missing currency default policy
+**Options considered:**
+A. Block row for manual review (treat identically to missing paid_by).
+B. Default to INR (the dominant currency of the dataset).
+**Chosen:** B — default to INR but flag visibly in the import report.
+**Why:** While missing payer has no reliable default, almost every row in the dataset is in INR. Assuming INR is a low-risk inference rather than a blind guess. Blocking every missing currency row creates unnecessary friction when the inference is highly likely to be correct.
+**Tradeoff accepted:** A missing currency that was actually meant to be USD will be incorrectly imported as INR. This is mitigated by ensuring the assumption is flagged visibly in the import report so it can be caught.
+**Reversible?** Yes, by manually correcting the currency in the UI or re-importing.
