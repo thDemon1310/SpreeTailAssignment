@@ -92,3 +92,11 @@ B. Separate rule: split_type non-blank AND single name in split_with AND descrip
 **Rate stored as:** Decimal('83.50') in every ExpenseSplit row for USD expenses.
 **Tradeoff accepted:** Rate may differ from the actual rate on that day. That is acceptable — the rate is documented and any discrepancy is visible in the import report.
 **Reversible?** Yes — rate is stored per-row, so future re-import with a different rate only requires changing this one constant and re-running.
+
+## Root Cause: Stale Test Database Blocking Interactive Prompt
+
+  What happened: Sonnet 4.6 launched three concurrent test runs (tasks 185, 193, 201) against the same Postgres test database  test_spreetail . They were killed mid-execution, leaving the
+  test DB behind. Django's test runner, on finding an existing  test_spreetail , prompts interactively: "Type 'yes' to delete...". Since the commands ran non-interactively (piped through
+  tail ), nobody answered the prompt and every subsequent test run hung indefinitely waiting for stdin.
+
+  Not the cause: No infinite loops, no network calls, no DB bloat. The actual test execution times are fine (9–13s per module).
