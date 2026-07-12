@@ -236,8 +236,8 @@ function ResolutionInputs({ type, members, value, onChange }) {
       >
         <option value="">Select Payer...</option>
         {members.map((m) => (
-          <option key={m.user.id} value={m.user.id}>
-            {m.user.username}
+          <option key={m.user_id} value={m.user_id}>
+            {m.username}
           </option>
         ))}
       </select>
@@ -274,8 +274,8 @@ function ResolutionInputs({ type, members, value, onChange }) {
         >
           <option value="">From...</option>
           {members.map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.username}
+            <option key={m.user_id} value={m.user_id}>
+              {m.username}
             </option>
           ))}
         </select>
@@ -285,8 +285,8 @@ function ResolutionInputs({ type, members, value, onChange }) {
         >
           <option value="">To...</option>
           {members.map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.username}
+            <option key={m.user_id} value={m.user_id}>
+              {m.username}
             </option>
           ))}
         </select>
