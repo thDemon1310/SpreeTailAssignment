@@ -8,6 +8,10 @@ export default function GroupsPage() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDesc, setNewGroupDesc] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -44,12 +48,54 @@ export default function GroupsPage() {
   if (loading && !selectedGroup) return <div className="page"><p>Loading...</p></div>;
   if (error) return <div className="page"><p className="error">{error}</p></div>;
 
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    try {
+      await api.post('/groups/', { name: newGroupName, description: newGroupDesc });
+      setNewGroupName('');
+      setNewGroupDesc('');
+      setShowCreateForm(false);
+      fetchGroups();
+    } catch (err) {
+      setError('Failed to create group');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <div className="page groups-page">
       <div className="page-header">
-        <h1>Groups</h1>
-        <p className="page-subtitle">Manage your shared expense groups</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>Groups</h1>
+            <p className="page-subtitle">Manage your shared expense groups</p>
+          </div>
+          <button className="btn primary" onClick={() => setShowCreateForm(!showCreateForm)}>
+            {showCreateForm ? 'Cancel' : 'Create New Group'}
+          </button>
+        </div>
       </div>
+      
+      {showCreateForm && (
+        <div className="card mb-4">
+          <h3>Create a Group</h3>
+          <form onSubmit={handleCreateGroup}>
+            <div className="form-group mb-4">
+              <label>Name</label>
+              <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} required />
+            </div>
+            <div className="form-group mb-4">
+              <label>Description</label>
+              <input type="text" value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} />
+            </div>
+            <button type="submit" className="btn primary" disabled={createLoading}>
+              {createLoading ? 'Creating...' : 'Create Group'}
+            </button>
+          </form>
+        </div>
+      )}
       
       {groups.length === 0 ? (
         <div className="placeholder-card">
