@@ -101,3 +101,10 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Produced:**
 - Corrected line-splitting in `handleFileChange` within `frontend/src/pages/ImportPage.jsx` from `.split('\\n')` to `.split(/\r?\n/)` to properly parse lines and prevent headers from parsing as a single line with empty rows.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-12] Phase 4 Task: Fix name_mismatch resolution crash
+**Asked for:** Diagnose and fix the 400 Bad Request error occurring when applying a resolution for a `name_mismatch` anomaly.
+**Produced:**
+- Modified `frontend/src/pages/ImportPage.jsx` `ResolutionInputs` component to render the payer select dropdown for `name_mismatch` anomalies, allowing `paid_by_id` to be selected and sent to the backend.
+- Modified `backend/core/tests_resolution_api.py` to add `test_apply_name_mismatch` unit test confirming successful resolution of inconsistent payer name anomalies.
+**Human caught wrong / had to redirect?** No.

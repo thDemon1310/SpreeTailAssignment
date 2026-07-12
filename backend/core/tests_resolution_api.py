@@ -80,3 +80,24 @@ class ResolutionAPITest(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("paid_by_id", resp.json()['detail'])
         self.assertEqual(Expense.objects.count(), 0)
+
+    def test_apply_name_mismatch(self):
+        anomaly = ImportAnomaly.objects.create(
+            batch=self.batch,
+            row_number=1,
+            raw_data={"description": "Lunch", "amount": "100", "date": "2026-03-01", "currency": "INR", "split_type": "equal", "split_with": "Aisha", "paid_by": "Rohan"},
+            problem_type="name_mismatch",
+            status="blocked"
+        )
+        url = reverse('group-anomaly-resolve', args=[self.group.id, anomaly.id])
+        resp = self.client.post(url, {
+            'action': 'apply',
+            'corrected_data': {'paid_by_id': self.aisha.id}
+        }, format='json')
+        
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        anomaly.refresh_from_db()
+        self.assertEqual(anomaly.status, 'manually_resolved')
+        self.assertEqual(Expense.objects.count(), 1)
+        self.assertEqual(Expense.objects.first().paid_by, self.aisha)
+        self.assertEqual(anomaly.linked_expense, Expense.objects.first())

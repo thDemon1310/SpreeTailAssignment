@@ -307,7 +307,7 @@ function AnomalyRow({ anomaly, members, onResolve, isRecentlyResolved }) {
 }
 
 function ResolutionInputs({ type, members, value, onChange }) {
-  if (type === "missing_payer") {
+  if (type === "missing_payer" || type === "name_mismatch") {
     return (
       <select
         value={value.paid_by_id || ""}
