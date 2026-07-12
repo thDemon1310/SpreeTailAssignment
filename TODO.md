@@ -46,10 +46,10 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Full re-read of the raw file for anything not on this list (whitespace, encoding, silent case variants) — this list is what was found on first pass, not a guarantee of completeness; log anything new as a new TODO item, do not fix it inline without logging it first. [x] Re-read complete. Case variants (`priya`), trailing whitespace (`rohan `), missing payer (Row 13) are already handled by existing rules. No new items found.
 - [x] Generate the Import Report as a real artifact from an actual run against the actual file — not written up from memory of what should happen. [x] Generated ImportReport.md via management command and copied to artifacts.
 - [x] Every anomaly + resolution logged into SCOPE.md's table as it's handled, using the Section 4 template — not batched at the end. [x] SCOPE.md is fully updated.
-- [ ] **GATE 3:** human reviews the full import report line by line against the CSV before the frontend import screen is built.
+- [x] **GATE 3:** human reviews the full import report line by line against the CSV before the frontend import screen is built.
 
 ## Phase 4 — Frontend
-- [ ] Login/auth flow
+- [x] Login/auth flow (already implemented in scaffolding via `LoginPage.jsx`, `RegisterPage.jsx`, and JWT api/client.js interceptors)
 - [ ] Group view: members with join/leave dates, expense list
 - [ ] Add expense form supporting all 4 split types
 - [ ] Balance summary — Aisha's "one number per person" view
