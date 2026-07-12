@@ -109,3 +109,13 @@ B. Exclude his share and redistribute proportionally among real members.
 **Why:** PLAN.md Section 3 policy #6 allows both, but B prevents the database from accumulating ghost users that break queries or require special filtering everywhere balances are shown. The redistribution is done proportionally using the same split_calc function as normal expenses, keeping it consistent.
 **Tradeoff accepted:** The non-member's implicit share is borne by the real members on the expense.
 **Reversible?** Yes, by re-running import with a different policy (since raw values are stored).
+
+## [2026-07-12] Decision: Settlement-detection threshold (2-of-3 triggers blocked)
+**Options considered:**
+A. Ignore rows with only 2 of 3 signals and let them import as normal expenses.
+B. Auto-route to Settlement if 2 of 3 signals match (lower the threshold for auto-routing).
+C. Block the row for manual review if exactly 2 of 3 match.
+**Chosen:** C — block for manual review.
+**Why:** A row that matches 2 signals (e.g. single recipient + "paid back" description, but non-blank split_type) is ambiguous. It might be a settlement where the user accidentally left split_type as "equal", or a real deposit/expense with a confusing description. Option A silently imports it as an expense, breaking balances. Option B silently assumes it's a settlement, risking data loss if it was a real expense. Option C forces the human to disambiguate the edge case.
+**Tradeoff accepted:** Increased friction during import. The user has to manually review and resolve these ambiguous rows rather than the system handling them automatically. Safe over silent.
+**Reversible?** Yes, the detection threshold is isolated to the importer function and can be adjusted on future imports.
