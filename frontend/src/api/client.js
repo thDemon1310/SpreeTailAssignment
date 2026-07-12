@@ -20,7 +20,13 @@ api.interceptors.request.use((config) => {
 
 // Auto-refresh token on 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Normalize paginated DRF responses to just the array
+    if (response.data && Array.isArray(response.data.results)) {
+      response.data = response.data.results;
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     if (
