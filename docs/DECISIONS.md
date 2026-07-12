@@ -100,3 +100,12 @@ B. Separate rule: split_type non-blank AND single name in split_with AND descrip
   tail ), nobody answered the prompt and every subsequent test run hung indefinitely waiting for stdin.
 
   Not the cause: No infinite loops, no network calls, no DB bloat. The actual test execution times are fine (9–13s per module).
+
+## [2026-07-12] Decision: Non-member in split_with (Kabir)
+**Options considered:**
+A. Auto-create a lightweight "guest" user.
+B. Exclude his share and redistribute proportionally among real members.
+**Chosen:** B — exclude and redistribute.
+**Why:** PLAN.md Section 3 policy #6 allows both, but B prevents the database from accumulating ghost users that break queries or require special filtering everywhere balances are shown. The redistribution is done proportionally using the same split_calc function as normal expenses, keeping it consistent.
+**Tradeoff accepted:** The non-member's implicit share is borne by the real members on the expense.
+**Reversible?** Yes, by re-running import with a different policy (since raw values are stored).
