@@ -1,0 +1,166 @@
+.balances-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.balances-layout {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.balances-sidebar {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-self: flex-start;
+}
+
+.group-selector {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.balances-summary {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.balances-summary h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.balance-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.balance-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid transparent;
+}
+
+.balance-item:hover {
+  background: #f9fafb;
+}
+
+.balance-item.active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.balance-name {
+  font-weight: 500;
+  color: #374151;
+}
+
+.balance-amount {
+  font-weight: 600;
+}
+
+.balance-amount.positive {
+  color: #15803d;
+}
+
+.balance-amount.negative {
+  color: #b91c1c;
+}
+
+.balance-amount.neutral {
+  color: #6b7280;
+}
+
+.balances-content {
+  flex: 1;
+}
+
+.drill-down-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6b7280;
+}
+
+.drill-down-card {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.drill-down-card h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.drill-down-card h2 .positive {
+  color: #15803d;
+}
+
+.drill-down-card h2 .negative {
+  color: #b91c1c;
+}
+
+.formula-bar {
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.drill-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.drill-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.drill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.drill-table th {
+  text-align: left;
+  padding: 8px 10px;
+  color: #6b7280;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.drill-table td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.drill-table tr:last-child td {
+  border-bottom: none;
+}
