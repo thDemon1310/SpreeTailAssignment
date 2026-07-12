@@ -73,15 +73,9 @@ SANE_DATE_MIN_MONTH = 2
 SANE_DATE_MAX_YEAR = 2026
 SANE_DATE_MAX_MONTH = 6
 
-# Regex for settlement-like descriptions
+# Regex for settlement/deposit-like descriptions
 _SETTLEMENT_RE = re.compile(
-    r'\b(paid|repaid|returned|gave|sent|back|settled|settlement)\b',
-    re.IGNORECASE,
-)
-
-# Regex for deposit/transfer-like descriptions
-_DEPOSIT_RE = re.compile(
-    r'\b(deposit|transfer|advance|moving in|moved in)\b',
+    r'\b(paid|repaid|returned|gave|sent|back|settled|settlement|deposit|transfer|advance|moving in|moved in)\b',
     re.IGNORECASE,
 )
 
@@ -441,7 +435,7 @@ def detect_settlement(row: dict) -> Optional[AnomalySpec]:
             detection_method=(
                 'All three conditions met: split_type blank, '
                 'split_with has exactly one name, description matches '
-                r'regex \b(paid|repaid|returned|gave|sent|back|settled|settlement)\b.'
+                r'regex \b(paid|repaid|returned|gave|sent|back|settled|settlement|deposit|transfer|advance|moving in|moved in)\b.'
             ),
             detected_value=(
                 f'description="{description}", split_type="{split_type}", '
@@ -976,48 +970,7 @@ def detect_split_type_conflict(row: dict) -> Optional[AnomalySpec]:
     )
 
 
-# ---------------------------------------------------------------------------
-# Detection rule: deposit/transfer not a shared expense (Phase 3 Task 17)
-# ---------------------------------------------------------------------------
 
-def detect_deposit_not_expense(row: dict) -> Optional[AnomalySpec]:
-    """
-    Detection method (DECISIONS.md [2026-07-11]):
-    split_type is non-blank AND split_with has exactly one name AND
-    description matches DEPOSIT_RE.
-    This is a SEPARATE rule from settlement detection (which requires blank split_type).
-    """
-    split_type = row.get('split_type', '').strip()
-    split_with_raw = row.get('split_with', '').strip()
-    description = row.get('description', '').strip()
-
-    if not split_type:
-        return None  # blank split_type → settlement detection handles it
-
-    names = [n.strip() for n in split_with_raw.split(';') if n.strip()]
-    if len(names) != 1:
-        return None
-
-    if not _DEPOSIT_RE.search(description):
-        return None
-
-    return AnomalySpec(
-        problem_type='deposit_not_expense',
-        detection_method=(
-            'split_type non-blank AND split_with has exactly one name AND '
-            r'description matches regex \b(deposit|transfer|advance|moving in|moved in)\b. '
-            'Separate rule from settlement detection (DECISIONS.md [2026-07-11]).'
-        ),
-        detected_value=(
-            f'description="{description}", split_type="{split_type}", '
-            f'split_with="{split_with_raw}"'
-        ),
-        action_taken=(
-            'Row blocked — flagged as possible deposit/transfer, not a shared expense. '
-            'No Expense written. Human must confirm and reclassify via UI.'
-        ),
-        status='blocked',
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1130,14 +1083,7 @@ def run_import(
             results.append(result)
             continue
 
-        # 5. Deposit/transfer — block before settlement check
-        deposit_spec = detect_deposit_not_expense(row)
-        if deposit_spec:
-            result.anomalies.append(deposit_spec)
-            result.skipped = True
-            _write_anomalies(result, batch)
-            results.append(result)
-            continue
+
 
         # 6. Settlement detection — may route to Settlement table
         settlement_spec = detect_settlement(row)

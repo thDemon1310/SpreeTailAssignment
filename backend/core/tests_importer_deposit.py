@@ -1,12 +1,10 @@
 """
-Tests for deposit/transfer detection in the CSV importer.
+Tests for deposit/transfer detection (now consolidated into settlement_as_expense).
 
-Detection: split_type non-blank AND split_with has exactly one name AND description matches DEPOSIT_RE.
-Policy: flag as blocked, no Expense written.
-CSV row: Row 33 (Sam deposit share, 2026-04-08, single-person split_with)
-
-Run with:
-    python manage.py test core.tests_importer_deposit --verbosity=2
+Detection:
+Uses the settlement rule's 2-of-3 fallback.
+If description matches settlement/deposit keywords AND split_with has 1 name,
+but split_type is not blank, it scores 2/3 and gets blocked as settlement_as_expense.
 """
 
 import os
@@ -16,7 +14,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from core.importer import detect_deposit_not_expense, run_import
+from core.importer import detect_settlement, run_import
 from core.models import Expense, Group, ImportAnomaly, Membership
 from django.contrib.auth import get_user_model
 
@@ -30,11 +28,11 @@ class DetectDepositUnitTest(TestCase):
             'split_with': 'Sam',
             'description': 'Sam deposit share for moving in'
         }
-        spec = detect_deposit_not_expense(row)
+        spec = detect_settlement(row)
         self.assertIsNotNone(spec)
-        self.assertEqual(spec.problem_type, 'deposit_not_expense')
+        self.assertEqual(spec.problem_type, 'settlement_as_expense')
         self.assertEqual(spec.status, 'blocked')
-        self.assertIn('Sam', spec.detected_value)
+        self.assertIn('Sam deposit share', spec.detected_value)
 
     def test_deposit_with_multiple_people_not_flagged(self):
         row = {
@@ -42,7 +40,8 @@ class DetectDepositUnitTest(TestCase):
             'split_with': 'Aisha; Sam',
             'description': 'deposit share for moving in'
         }
-        spec = detect_deposit_not_expense(row)
+        spec = detect_settlement(row)
+        # Score is 1 (desc match only). 1/3 does not trigger.
         self.assertIsNone(spec)
 
     def test_non_deposit_description_not_flagged(self):
@@ -51,18 +50,20 @@ class DetectDepositUnitTest(TestCase):
             'split_with': 'Sam',
             'description': 'Groceries'
         }
-        spec = detect_deposit_not_expense(row)
+        spec = detect_settlement(row)
+        # Score is 1 (single recipient only). 1/3 does not trigger.
         self.assertIsNone(spec)
 
-    def test_blank_split_type_not_flagged_by_this_rule(self):
-        # Blank split type is handled by settlement rule
+    def test_blank_split_type_auto_resolved(self):
         row = {
             'split_type': '',
             'split_with': 'Sam',
             'description': 'Sam deposit share'
         }
-        spec = detect_deposit_not_expense(row)
-        self.assertIsNone(spec)
+        spec = detect_settlement(row)
+        # Score 3/3 -> auto_resolved to settlement
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec.status, 'auto_resolved')
 
 
 class DepositIntegrationTest(TestCase):
@@ -93,7 +94,7 @@ class DepositIntegrationTest(TestCase):
         expenses = Expense.objects.all()
         self.assertEqual(expenses.count(), 0)
 
-        anomaly = ImportAnomaly.objects.filter(problem_type='deposit_not_expense').first()
+        anomaly = ImportAnomaly.objects.filter(problem_type='settlement_as_expense').first()
         self.assertIsNotNone(anomaly)
         self.assertEqual(anomaly.status, 'blocked')
         self.assertIn('Sam deposit share', anomaly.detected_value)

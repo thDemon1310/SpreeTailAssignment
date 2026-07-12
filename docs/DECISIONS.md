@@ -62,28 +62,16 @@ Error ID: 61c6ad39-b9d1-4f28-90dc-199983f25775-391
 **Tradeoff accepted:** Settlement create/list API is not accessible via REST until Phase 2 Task 5 is re-addressed. The balance_calc function already reads Settlement rows, so imported settlements will count in balances correctly.
 **Reversible?** Yes — Task 5 is still in TODO.md.
 
-## [2026-07-11] Decision: Settlement detection heuristic (import pipeline)
+## [2026-07-11] Decision: Settlement/Deposit detection heuristic (import pipeline)
 **Options considered:**
 A. Blank split_type AND single name in split_with AND description regex match.
 B. Any row with a single split_with recipient, regardless of split_type.
 C. Pure description regex, no structural check.
-**Chosen:** A — all three conditions must hold simultaneously.
-**Why:** Option B would misclassify "Sam deposit share" (row 38) which has split_type=equal and is a deposit, not a settlement. Option C alone has too many false positives. The three-way conjunction is high-confidence: (1) split_type blank signals the logger didn't know what category it was; (2) single recipient is structurally different from a shared expense; (3) description regex `r'\b(paid|repaid|returned|gave|sent|back|settled|settlement)\b'` (case-insensitive) catches common payment language. All three failing means not auto-routed.
-**Settlement description regex:** `re.search(r'\b(paid|repaid|returned|gave|sent|back|settled|settlement)\b', description, re.IGNORECASE)` — match on whole words only to avoid false hits on e.g. "backdrop."
-**Fallback:** If two conditions hold but not three (low-confidence), route to `blocked` anomaly for human review, do not auto-route.
-**Tradeoff accepted:** Rows that are clearly settlements but miss the description pattern go to manual review instead of being auto-routed. Better than auto-routing something that isn't a settlement.
+**Chosen:** A — all three conditions must hold simultaneously for auto-routing.
+**Why:** Option B would misclassify normal single-person expenses. The three-way conjunction is high-confidence: (1) split_type blank signals the logger didn't know what category it was; (2) single recipient is structurally different from a shared expense; (3) description regex `r'\b(paid|repaid|returned|gave|sent|back|settled|settlement|deposit|transfer|advance|moving in|moved in)\b'` (case-insensitive) catches common payment/deposit language. All three failing means not auto-routed.
+**Fallback:** If two conditions hold but not three (low-confidence), route to `blocked` anomaly (`settlement_as_expense`) for manual review, do not auto-route. This gracefully catches deposits (which usually have `split_type="equal"`, so they score 2/3: single recipient + desc match) and blocks them.
+**Tradeoff accepted:** Rows that are clearly settlements but miss the description pattern go to manual review instead of being auto-routed. Better than auto-routing something that isn't a settlement. Deposits also require manual review rather than auto-routing, which is correct since they might require manual confirmation.
 **Reversible?** Yes — detection is isolated to the importer.
-
-## [2026-07-11] Decision: Deposit/transfer detection heuristic (import pipeline)
-**Options considered:**
-A. Reuse settlement detection rule (same TODO item says "note explicitly whether this trips the same rule").
-B. Separate rule: split_type non-blank AND single name in split_with AND description regex.
-**Chosen:** B — separate rule. Row 38 "Sam deposit share" has split_type=equal (not blank), so it does NOT trip the settlement rule (which requires blank split_type). It needs its own detection.
-**Deposit description regex:** `re.search(r'\b(deposit|transfer|advance|moving in|moved in)\b', description, re.IGNORECASE)`.
-**Additional structural signal:** single name in split_with (one-to-one payment, not a group split).
-**Storage/fallback:** Same as settlement item — routed to `blocked` anomaly, action_taken = "flagged as possible deposit/transfer", status = "blocked". Linked to no expense until human confirms.
-**Tradeoff accepted:** A legitimate one-person expense (e.g. paying someone back for a personal item) could trip this if the description contains "deposit." That is acceptable — the flag goes to human review, not silent discard.
-**Reversible?** Yes.
 
 ## [2026-07-11] Decision: FX conversion rate for USD rows
 **Options considered:** A. Live FX API call at import time. B. Fixed documented rate stated up front.
