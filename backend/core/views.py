@@ -19,6 +19,8 @@ from .serializers import (
     ExpenseSerializer,
     ExpenseCreateSerializer,
     SettlementSerializer,
+    ImportBatchSerializer,
+    ImportAnomalySerializer,
 )
 
 User = get_user_model()
@@ -351,4 +353,66 @@ def group_user_balance_detail(request, group_id, user_id):
             for s in settlements_received.order_by('-date')
         ]
     })
+
+
+# --------------- Import ---------------
+
+from .importer import run_import
+from .models import ImportBatch, ImportAnomaly
+import tempfile
+import os
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def import_csv(request, group_id):
+    """
+    POST /api/groups/<group_id>/import/
+    Accepts a multipart/form-data with a 'file' field containing the CSV.
+    Runs the importer and returns the batch summary.
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member.'}, status=status.HTTP_403_FORBIDDEN)
+        
+    file_obj = request.FILES.get('file')
+    if not file_obj:
+        return Response({'detail': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # Write to temp file because run_import takes a path
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as tmp:
+        for chunk in file_obj.chunks():
+            tmp.write(chunk)
+        tmp_path = tmp.name
+        
+    try:
+        result = run_import(tmp_path, group, request.user)
+        return Response({
+            'batch_id': result.batch.id,
+            'total_rows_processed': result.batch.total_rows,
+            'imported_rows': result.imported_rows,
+            'skipped_rows': result.skipped_rows,
+            'created_at': result.batch.created_at
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    finally:
+        os.remove(tmp_path)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def import_anomalies(request, group_id, batch_id):
+    """
+    GET /api/groups/<group_id>/import/<batch_id>/anomalies/
+    Returns the anomalies for a specific batch.
+    """
+    group = get_object_or_404(Group, id=group_id)
+    if not group.memberships.filter(user=request.user).exists():
+        return Response({'detail': 'Not a member.'}, status=status.HTTP_403_FORBIDDEN)
+        
+    batch = get_object_or_404(ImportBatch, id=batch_id, group=group)
+    anomalies = ImportAnomaly.objects.filter(batch=batch).order_by('row_number')
+    return Response(ImportAnomalySerializer(anomalies, many=True).data)
 

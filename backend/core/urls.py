@@ -11,6 +11,8 @@ from .views import (
     group_balances,
     group_user_balance_detail,
     settlement_list_create,
+    import_csv,
+    import_anomalies,
 )
 
 urlpatterns = [
@@ -33,4 +35,7 @@ group_urlpatterns = [
     # Balances
     path('<int:group_id>/balances/', group_balances, name='group-balances'),
     path('<int:group_id>/balances/<int:user_id>/', group_user_balance_detail, name='group-user-balance'),
+    # Import
+    path('<int:group_id>/import/', import_csv, name='group-import'),
+    path('<int:group_id>/import/<int:batch_id>/anomalies/', import_anomalies, name='group-import-anomalies'),
 ]

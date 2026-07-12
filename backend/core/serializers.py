@@ -44,7 +44,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 # --------------- Group / Membership ---------------
 
-from .models import Expense, ExpenseSplit, Group, Membership, Settlement
+from .models import Expense, ExpenseSplit, Group, Membership, Settlement, ImportBatch, ImportAnomaly
 
 
 class MembershipSerializer(serializers.ModelSerializer):
@@ -339,3 +339,17 @@ class SettlementSerializer(serializers.ModelSerializer):
             'amount', 'date', 'created_at'
         )
         read_only_fields = ('id', 'group', 'from_username', 'to_username', 'created_at')
+
+
+class ImportAnomalySerializer(serializers.ModelSerializer):
+    """Serializer for ImportAnomaly rows."""
+    class Meta:
+        model = ImportAnomaly
+        fields = '__all__'
+
+
+class ImportBatchSerializer(serializers.ModelSerializer):
+    """Serializer for ImportBatch rows."""
+    class Meta:
+        model = ImportBatch
+        fields = '__all__'
