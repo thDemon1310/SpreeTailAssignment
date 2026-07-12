@@ -81,3 +81,8 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Asked for:** UI improvements for file preview step and anomaly review screen without changing backend import logic.
 **Produced:** Added a distinct Preview step before anomaly review by decoupling the UI states (`previewMode`). Implemented local `FileReader` to show CSV raw data table before confirmation. Grouped anomaly summary counts at the top. Added filtering by anomaly problem type/status. Replaced JSON dump with a mini table mapping CSV headers to extracted data. Added a CSS flash animation for resolution feedback. Renamed Upload button to "Analyze CSV" and added "Confirm Import" flow.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-12] Phase 4 Task: Deployment Configuration
+**Asked for:** Prepare backend for Render and frontend for Vercel, using Railway Postgres.
+**Produced:** Added `gunicorn`, `dj-database-url`, `whitenoise` to backend requirements. Updated `settings.py` to securely parse `DATABASE_URL` via `dj_database_url` (with fallback to dev), use `whitenoise` for static files, and dynamically load `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DEBUG`, and `SECRET_KEY` from environment variables. Created `backend/build.sh` for Render build process. Confirmed `VITE_API_URL` usage in frontend API client.
+**Human caught wrong / had to redirect?** No.
