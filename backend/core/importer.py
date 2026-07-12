@@ -726,7 +726,7 @@ def detect_negative_amount(row: dict) -> Optional[AnomalySpec]:
         detected_value=f'amount={raw}',
         action_taken=(
             f'Treated as refund per PLAN.md #1. '
-            f'Amount negated to {abs(d)} for Expense.amount. '
+            f'Amount kept as negative ({d}) for Expense.amount to reduce outlay. '
             'Original negative value preserved in ImportAnomaly.detected_value. '
             'Appears in import report as refund (reduces payer\'s effective outlay).'
         ),
@@ -1379,9 +1379,10 @@ def _try_create_expense(
         result.skipped = True
         return
 
-    # Negative → refund (absolute value)
+    is_negative = False
     if raw_amount < 0:
         raw_amount = abs(raw_amount)
+        is_negative = True
 
     # Round to 2dp
     amount_inr = _round(raw_amount)
@@ -1471,6 +1472,12 @@ def _try_create_expense(
         except SplitCalcError:
             result.skipped = True
             return
+
+    if is_negative:
+        amount_inr = -amount_inr
+        if original_amount is not None:
+            original_amount = -original_amount
+        splits = {uid: -s_amt for uid, s_amt in splits.items()}
 
     with transaction.atomic():
         expense = Expense.objects.create(
