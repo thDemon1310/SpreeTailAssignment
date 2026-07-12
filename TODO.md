@@ -55,7 +55,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Balance summary — Aisha's "one number per person" view
 - [x] Balance drill-down showing the underlying ExpenseSplit/Settlement rows behind each number — Rohan's "no magic numbers" view; this must query real rows, not recompute in the frontend
 - [x] Settle-up flow
-- [ ] Import report screen (trigger import, show anomaly table + resolutions, nothing pre-applied silently)
+- [x] Import report screen (trigger import, show anomaly table + resolutions, nothing pre-applied silently) - *built generic resolution API and UI for blocked anomalies*
 - [ ] **GATE 4:** human walks through the full UI once, end to end, before deploy
 
 ## Phase 5 — Optional AI/LLM feature (bonus — do not start until Phases 0–4 are done and gated)
