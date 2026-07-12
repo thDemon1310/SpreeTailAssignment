@@ -76,3 +76,8 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Asked for:** Diagnose and fix Uncaught TypeError reading "id" in ResolutionInputs map.
 **Produced:** Fixed `ImportPage.jsx` component to correctly map member attributes.
 **Human caught wrong / had to redirect?** Yes — the UI crashed due to wrong data shape assumptions. Root cause: the `ResolutionInputs` component mapped the `members` array (passed down from `selectedGroup.memberships`) but incorrectly expected a nested `m.user` object (`m.user.id`, `m.user.username`). The backend API correctly returns a flat structure (`m.user_id`, `m.username`). This was a case of (a): the UI component wrongly assumed a nested shape. Fix: Updated all instances of `m.user.id` and `m.user.username` in `ResolutionInputs` to `m.user_id` and `m.username`.
+
+## [2026-07-12] Phase 4 Task: Import UI Improvements
+**Asked for:** UI improvements for file preview step and anomaly review screen without changing backend import logic.
+**Produced:** Added a distinct Preview step before anomaly review by decoupling the UI states (`previewMode`). Implemented local `FileReader` to show CSV raw data table before confirmation. Grouped anomaly summary counts at the top. Added filtering by anomaly problem type/status. Replaced JSON dump with a mini table mapping CSV headers to extracted data. Added a CSS flash animation for resolution feedback. Renamed Upload button to "Analyze CSV" and added "Confirm Import" flow.
+**Human caught wrong / had to redirect?** No.
