@@ -123,7 +123,7 @@ A. Purely structural: block any date where day <= 12 and month <= 12.
 B. Text-signaled: block if structural condition holds AND note explicitly mentions confusion (e.g. "April", "May", "wrong").
 **Chosen:** B — Text-signaled structural ambiguity.
 **Why:** Option A would produce too many false positives since dates like 04-05 are perfectly valid structurally. We rely on the note field casting doubt on the format, which explicitly flags the ambiguity in the human's mind.
-**Tradeoff accepted:** If a date is structurally ambiguous but the user didn't write a note questioning it, we blindly accept the ISO-8601 interpretation. This is acceptable because without a note, there is no signal of error.
+**Tradeoff accepted:** If a date is structurally ambiguous but the user didn't write a note questioning it, we blindly accept the ISO-8601 interpretation. This is acceptable because without a note, there is no signal of error. Note that this rule's blind spot ONLY applies to dates that are both structurally ambiguous AND within the plausible date range — structurally clear dates (like 13th) or out-of-range dates (like 2014) are caught by other rules (like Task 11), not this one.
 **Reversible?** Yes, the date can be edited in the UI to the correct interpretation.
 
 ## [2026-07-12] Decision: split_type says "equal" but split_details exists
@@ -132,5 +132,10 @@ A. Trust split_type ("equal") and ignore split_details.
 B. Trust split_details (explicit shares) and infer split_type from the format.
 **Chosen:** B — split_details wins, flag anomaly as auto_resolved.
 **Why:** A user taking the time to explicitly type out shares (e.g. `Aisha:1000; Rohan:2000`) is high-intent data. `split_type="equal"` is often a careless default from a dropdown or copy-paste. Explicit numbers override the label.
+**Inference logic:** When split_details wins, the actual type is inferred as follows:
+  - If it contains `%`, infer `percentage`.
+  - If it parses cleanly and EVERY value is an integer (e.g., `Aisha 40; Rohan 60`), infer `shares`. (Note: this means `40; 60` is treated as a 40:60 ratio, not absolute unequal amounts. If they were meant as absolute amounts, it's mathematically equivalent anyway once normalized to the expense total).
+  - If it parses cleanly and ANY value has a fractional part (e.g., `Aisha 10.50`), infer `unequal`.
+  - If it fails to parse, fallback to `equal`.
 **Tradeoff accepted:** If someone meant "equal" and copy-pasted leftover `split_details` by accident, we will incorrectly apply an unequal split. However, this is visible in the UI and can be manually corrected.
 **Reversible?** Yes, the expense can be edited via the UI to an equal split.
