@@ -170,7 +170,7 @@ SIMPLE_JWT = {
 # CORS
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+    for o in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:4173').split(',')
     if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
