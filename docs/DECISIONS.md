@@ -158,3 +158,13 @@ C. Implement a global `refreshTrigger` state counter in `AuthContext` with mutat
 **Why:** Option A is fragile and leads to repetitive one-off refetch calls that are hard to maintain. Option B would require a significant rewrite of the app's data-fetching codebase (currently written in simple `useEffect` hooks calling Axios directly), which violates the "not a rewrite" rule. Option C is a robust, lightweight, and systemic pattern that integrates cleanly into the existing context: any page can subscribe to the trigger in its `useEffect` dependency array, and any mutation triggers a state update that reactively refreshes all active consumers.
 **Tradeoff accepted:** Every subscribed page refetches its data on any mutation, even if the mutation didn't affect its specific domain (e.g., adding an expense in group A fetches groups list in Settle page). However, given the lightweight nature of our endpoints, this overhead is negligible.
 **Reversible?** Yes — since components still use standard Axios calls inside `useEffect`, transitioning to React Query later would only require replacing the hooks without changing the component template structure.
+
+## [2026-07-16] Decision: UI button styling fixes
+**Options considered:**
+A. Hand-write page-specific button styling classes in local CSS files for GroupsPage and ImportPage.
+B. Write inline style properties directly on the buttons in JSX.
+C. Define global `.btn.primary` and `.btn.secondary` classes in `index.css` matching established designs, and apply standard HTML file input styles.
+**Chosen:** C — Global button classes in `index.css` and custom `::file-selector-button` styles.
+**Why:** The app's existing pages (`ExpensesPage`, `SettlePage`, `ImportPage`) use a combination of classes like `btn primary`, `btn secondary`, `btn-primary`, and `btn-secondary`, but the corresponding styles were not defined globally. Option C implements these classes in `index.css` systematically to match the visual styling (colors, transitions, border radii) already established on pages like `ExpensesPage` (e.g. `#4f46e5` for primary buttons), ensuring consistency across all pages and resolving all unstyled buttons simultaneously.
+**Tradeoff accepted:** None. This consolidates button styling into the main stylesheet rather than polluting local component CSS files.
+**Reversible?** Yes, by modifying `index.css`.

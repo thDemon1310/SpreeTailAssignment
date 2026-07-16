@@ -139,7 +139,7 @@ export default function ImportPage() {
 
             <form onSubmit={handleUpload} className="upload-form m-0">
               <input type="file" accept=".csv" onChange={handleFileChange} />
-              <button type="submit" disabled={uploading || !file}>
+              <button type="submit" className="btn primary" disabled={uploading || !file}>
                 {uploading ? "Analyzing..." : "Analyze CSV"}
               </button>
               {error && <div className="error-text">{error}</div>}

@@ -120,3 +120,12 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Integrated `triggerRefresh()` calls into all mutating actions: group creation, membership addition, expense creation, settlement creation, CSV upload, and anomaly resolution.
 **Human caught wrong / had to redirect?** Yes — backend `/me/` endpoint was queried as `/api/me/`, causing a 404. Diagnosed the mount point prefix `/api/auth/me/` from `api_urls.py`, and updated all occurrences in `AuthContext.jsx` and `DashboardPage.jsx`. Also, verified that 400 Bad Request responses on `/api/groups/1/members/` are standard input validation errors (user already in group or username non-existent) and not application bugs.
 
+## [2026-07-16] Phase 4 Task: BUG 2 — UI styling fixes
+**Asked for:** Fix unstyled buttons on GroupsPage (Create New Group, Add Member) and ImportPage (Analyze CSV, Choose File) to match established design patterns.
+**Produced:**
+- Created global `.btn`, `.btn.primary`, `.btn.secondary`, `.btn-primary`, and `.btn-secondary` classes in `frontend/src/index.css` matching the `#4f46e5` primary theme colors, font styling, padding, transitions, and hover properties found elsewhere in the app.
+- Added `className="btn primary"` to the "Analyze CSV" button in `ImportPage.jsx`.
+- Styled the custom file upload input (`input[type="file"]`) and its `::file-selector-button` in `ImportPage.css` to match the application's visual aesthetics.
+**Human caught wrong / had to redirect?** No.
+
+
