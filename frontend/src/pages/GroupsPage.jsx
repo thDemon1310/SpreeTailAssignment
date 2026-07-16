@@ -19,10 +19,49 @@ export default function GroupsPage() {
   const [addJoinedOn, setAddJoinedOn] = useState(new Date().toISOString().split('T')[0]);
   const [addMemberError, setAddMemberError] = useState('');
   const [addMemberLoading, setAddMemberLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     fetchGroups(selectedGroup?.id);
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    if (!addUsername.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const { data } = await api.get(`/users/?search=${encodeURIComponent(addUsername)}`);
+        // Filter out users who are already members of this group
+        const memberIds = (selectedGroup?.memberships || []).map(m => m.user_id);
+        const filtered = data.filter(u => !memberIds.includes(u.id));
+        setSearchResults(filtered);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error('Failed to search users:', err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [addUsername, selectedGroup?.memberships]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.searchable-dropdown-container')) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
@@ -47,6 +86,8 @@ export default function GroupsPage() {
     if (isManual) {
       setShowAddMemberForm(false);
       setAddUsername('');
+      setSearchResults([]);
+      setShowDropdown(false);
       setAddJoinedOn(new Date().toISOString().split('T')[0]);
       setAddMemberError('');
     }
@@ -79,6 +120,8 @@ export default function GroupsPage() {
       // Update this group in the groups list
       setGroups(groups.map(g => g.id === data.id ? data : g));
       setAddUsername('');
+      setSearchResults([]);
+      setShowDropdown(false);
       setAddJoinedOn(new Date().toISOString().split('T')[0]);
       setShowAddMemberForm(false);
       triggerRefresh();
@@ -198,15 +241,45 @@ export default function GroupsPage() {
                     <div className="add-member-form-card">
                       <h4>Add Member to Group</h4>
                       <form onSubmit={handleAddMember} className="add-member-form">
-                        <div className="form-group">
+                        <div className="form-group searchable-dropdown-container">
                           <label>Username or Email</label>
                           <input 
                             type="text" 
                             value={addUsername} 
-                            onChange={e => setAddUsername(e.target.value)} 
+                            onChange={e => {
+                              setAddUsername(e.target.value);
+                              setShowDropdown(true);
+                            }} 
+                            onFocus={() => {
+                              if (addUsername.trim()) setShowDropdown(true);
+                            }}
                             required 
                             placeholder="e.g. rohan"
+                            autoComplete="off"
                           />
+                          {showDropdown && (searchLoading || searchResults.length > 0) && (
+                            <ul className="search-results-dropdown">
+                              {searchLoading && <li className="dropdown-status">Searching...</li>}
+                              {!searchLoading && searchResults.map(u => (
+                                <li 
+                                  key={u.id} 
+                                  onClick={() => {
+                                    setAddUsername(u.username);
+                                    setShowDropdown(false);
+                                  }}
+                                  className="dropdown-item"
+                                >
+                                  <span className="dropdown-username">{u.username}</span>
+                                  <span className="dropdown-email">{u.email}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {!searchLoading && showDropdown && addUsername.trim() && searchResults.length === 0 && (
+                            <ul className="search-results-dropdown">
+                              <li className="dropdown-status">No matching users found</li>
+                            </ul>
+                          )}
                         </div>
                         <div className="form-group">
                           <label>Joined On</label>

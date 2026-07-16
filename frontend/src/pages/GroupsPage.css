@@ -207,3 +207,61 @@
   margin-top: 8px;
   font-weight: 500;
 }
+
+/* --- Searchable Dropdown --- */
+.searchable-dropdown-container {
+  position: relative;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 4px 0;
+  margin: 4px 0 0 0;
+  color: #1f2937;
+}
+
+.dropdown-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: left;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: #f3f4f6;
+}
+
+.dropdown-username {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.dropdown-email {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.dropdown-status {
+  padding: 12px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-align: center;
+}
