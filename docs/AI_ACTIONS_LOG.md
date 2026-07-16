@@ -141,6 +141,17 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Appended styling rules for the dropdown list, items, hover state, and status message to `frontend/src/pages/GroupsPage.css`.
 **Human caught wrong / had to redirect?** Yes — user corrected the initial test case assumption: the test should assert against `results` keys in the response instead of turning off view pagination to match the project's consistent paginated response shape. Test cases were corrected to use `resp.data['results']` accordingly.
 
+## [2026-07-17] Business Rule Correction: Enforce self-payment rules on backend and frontend
+**Asked for:** Enforce that a user can only create an expense or settlement with themselves as paid_by / from side. Remove the paid_by dropdown from expense create and from side of settle up, replaced with read-only logged-in user. Validate and reject spoofed payloads on backend with 400 Bad Request. Filter settlement recipient to active members only. Add API tests and update DECISIONS.md.
+**Produced:**
+- Modified `backend/core/serializers.py` to make `paid_by_id` optional in `ExpenseCreateSerializer`, validate that if provided it must match `request.user.id`, and default it to `request.user.id`.
+- Modified `backend/core/views.py` `settlement_list_create` view to reject settlement creations if `from_user_id` is spoofed/mismatched, default it to `request.user.id` when omitted, reject if trying to settle with self, and validate that `to_user_id` is an active member of the group on the settlement date (left_on has not passed).
+- Updated `frontend/src/pages/ExpensesPage.jsx` and `frontend/src/pages/SettlePage.jsx` to pull the user object from `useAuth()`, display the payer as read-only text, and submit the payer user ID automatically. Filtered settlement recipient options to active members (`user_id !== user.id && !m.left_on`).
+- Added unit tests in `core/tests_expenses.py` and `core/tests_settlement_api.py` verifying that direct API calls attempting to spoof the payer/sender are rejected with a 400 Bad Request, and verifying active membership checks.
+- Logged the decision and tradeoffs in `docs/DECISIONS.md`.
+**Human caught wrong / had to redirect?** Yes — the settlement page initially threw a `ReferenceError` because the `user` object was not destructured from `useAuth` in `SettlePage.jsx`. This was caught and corrected by adding `user` to the destructuring list.
+
+
 
 
 
