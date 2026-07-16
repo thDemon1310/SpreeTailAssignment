@@ -81,7 +81,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 
 ## Business Rule Correction (Self-Payment Only)
 - [x] Enforce self-payment on Expense creation (backend validation, front-end read-only field) — Removed paid_by dropdown, replaced with read-only logged-in user, and enforced request.user as payer on backend
-- [~] Enforce self-payment on Settlement creation (backend validation, front-end read-only field, active members dropdown for recipient)
-- [ ] Write API tests verifying that spoofed paid_by / from_user are rejected/overridden
+- [x] Enforce self-payment on Settlement creation (backend validation, front-end read-only field, active members dropdown for recipient) — Locked payer to requesting user on both backend and frontend, and filtered recipient options to active members
+- [~] Write API tests verifying that spoofed paid_by / from_user are rejected/overridden
 - [ ] Update DECISIONS.md with the business rule logging
 

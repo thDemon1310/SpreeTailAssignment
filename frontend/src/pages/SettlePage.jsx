@@ -4,12 +4,11 @@ import api from '../api/client';
 import './SettlePage.css';
 
 export default function SettlePage() {
-  const { refreshTrigger, triggerRefresh } = useAuth();
+  const { user, refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  const [fromUserId, setFromUserId] = useState('');
   const [toUserId, setToUserId] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -40,11 +39,11 @@ export default function SettlePage() {
 
   const selectGroup = (group) => {
     setSelectedGroup(group);
-    if (group.memberships.length >= 2) {
-      setFromUserId(group.memberships[0].user_id.toString());
-      setToUserId(group.memberships[1].user_id.toString());
-    } else if (group.memberships.length === 1) {
-      setFromUserId(group.memberships[0].user_id.toString());
+    const options = group.memberships.filter(m => m.user_id !== user?.id && !m.left_on);
+    if (options.length > 0) {
+      setToUserId(options[0].user_id.toString());
+    } else {
+      setToUserId('');
     }
   };
 
@@ -53,7 +52,12 @@ export default function SettlePage() {
     setError('');
     setSuccess('');
     
-    if (fromUserId === toUserId) {
+    if (!toUserId) {
+      setError('Please select a recipient.');
+      return;
+    }
+    
+    if (user?.id === parseInt(toUserId, 10)) {
       setError('Cannot settle with yourself.');
       return;
     }
@@ -61,7 +65,7 @@ export default function SettlePage() {
     setSubmitting(true);
     try {
       await api.post(`/groups/${selectedGroup.id}/settlements/`, {
-        from_user_id: parseInt(fromUserId, 10),
+        from_user_id: user?.id,
         to_user_id: parseInt(toUserId, 10),
         amount,
         date
@@ -111,11 +115,16 @@ export default function SettlePage() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Who Paid?</label>
-                  <select value={fromUserId} onChange={e => setFromUserId(e.target.value)} required>
-                    {selectedGroup?.memberships.map(m => (
-                      <option key={m.user_id} value={m.user_id}>{m.username}</option>
-                    ))}
-                  </select>
+                  <input 
+                    type="text" 
+                    value={user?.username || ''} 
+                    readOnly 
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      cursor: 'not-allowed',
+                      color: 'var(--text-secondary, #a0aec0)'
+                    }} 
+                  />
                 </div>
                 
                 <div className="arrow-icon">➔</div>
@@ -123,7 +132,7 @@ export default function SettlePage() {
                 <div className="form-group">
                   <label>Who Received?</label>
                   <select value={toUserId} onChange={e => setToUserId(e.target.value)} required>
-                    {selectedGroup?.memberships.map(m => (
+                    {selectedGroup?.memberships.filter(m => m.user_id !== user?.id && !m.left_on).map(m => (
                       <option key={m.user_id} value={m.user_id}>{m.username}</option>
                     ))}
                   </select>
