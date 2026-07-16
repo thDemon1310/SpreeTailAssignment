@@ -188,3 +188,12 @@ B. Set form inputs to `width: 100%` and `max-width: 100%`, and stack form rows v
 **Tradeoff accepted:** Form fields stack on narrow screens, changing from horizontal to vertical. This is standard and expected responsive design behavior.
 **Reversible?** Yes.
 
+## [2026-07-16] Decision: Direct-add user search dropdown over invite-and-accept flow
+**Options considered:**
+A. Implement a full user invitation and acceptance system (with notifications, group invites table, and join status approvals).
+B. Replace the exact username input with a searchable live-filtering autocomplete dropdown directly adding selected users to the group.
+**Chosen:** Option B (Direct-add with searchable autocomplete).
+**Why:** The assignment's core requirement is supporting "membership changes over time" (which our `joined_on`/`left_on` fields on `Membership` already handle perfectly). Introducing a full user invitation/acceptance flow requires creating several new database tables, notification models, approval APIs, and complex UI overlay panels. Given the tight schedule before Phase 6 deployment, Option B provides the desired searchable user lookup functionality while utilizing direct CRUD actions, matching the established user-experience pattern of the project.
+**Tradeoff accepted:** Users are added immediately to groups by any active group member, rather than receiving an invitation to join.
+**Reversible?** Yes — we can later swap the backend `members/` POST handler to create an invite record instead of a direct `Membership` row, and display invites in a notification panel.
+

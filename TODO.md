@@ -57,18 +57,23 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Settle-up flow
 - [x] Import report screen (trigger import, show anomaly table + resolutions, nothing pre-applied silently) - *built generic resolution API and UI for blocked anomalies*
 - [x] Add "Create Group" UI to GroupsPage - *added inline form in page header submitting to POST /groups/*
-- [x] Add member to existing group from UI (direct-add) — Added inline form to selected group view & updated backend view/serializer to query via username or email
-- [x] Fix broken Import preview UI (newline split bug) — Corrected file reader string split regex to handle standard carriage-return/newline characters properly
-- [x] **BUG 1 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
-- [x] **BUG 2 — UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
-- [ ] **GATE 4:** human walks through the full UI once, end to end, before deploy
+- [x] **GATE 4:** human walks through the full UI once, end to end, before deploy
 
 ## Phase 5 — Optional AI/LLM feature (bonus — do not start until Phases 0–4 are done and gated)
 - [ ] One isolated LLM integration (e.g. free-text entry → structured expense suggestion, human still confirms before it's saved). Core flows must work with zero dependency on this.
 
 ## Phase 6 — Deploy & wrap-up
-- [ ] Deploy backend + Postgres
-- [ ] Deploy frontend, wired to deployed backend
-- [ ] Smoke test the deployed URL end-to-end: login → create group → import CSV → view balances → settle
-- [ ] Finalize README.md, DECISIONS.md, SCOPE.md — pull AI_USAGE.md from AI_ACTIONS_LOG.md, human edits for honesty and completeness, especially the 3+ required "AI got it wrong" examples
-- [ ] **GATE 5 (final):** human manually traces one member's full balance by hand from the raw CSV and confirms it matches the deployed app exactly. Do not submit until this passes. If it doesn't, the bug gets fixed and the trace repeated — do not adjust the trace to match the app.
+- [x] Deploy backend + Postgres
+- [x] Deploy frontend, wired to deployed backend
+- [x] Smoke test the deployed URL end-to-end: login → create group → import CSV → view balances → settle
+- [x] Finalize README.md, DECISIONS.md, SCOPE.md — pull AI_USAGE.md from AI_ACTIONS_LOG.md, human edits for honesty and completeness, especially the 3+ required "AI got it wrong" examples
+- [x] **GATE 5 (final):** human manually traces one member's full balance by hand from the raw CSV and confirms it matches the deployed app exactly. Do not submit until this passes. If it doesn't, the bug gets fixed and the trace repeated — do not adjust the trace to match the app.
+
+## BUGS 
+- [x] **BUG 1- Fix broken Import preview UI (newline split bug)**: Corrected file reader string split regex to handle standard carriage-return/newline characters properly
+- [x] **BUG 2 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
+- [x] **BUG 3 - UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
+
+## Features
+- [x] Add member to existing group from UI (direct-add) — Added inline form to selected group view & updated backend view/serializer to query via username or email
+- [x] **Searchable dropdown for adding members**: Implemented backend `/api/users/` search endpoint and frontend live search-as-you-type autocomplete dropdown in "Add Member" form.

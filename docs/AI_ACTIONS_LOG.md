@@ -130,5 +130,17 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Added width and max-width style properties to `input` and `select` elements in `ExpensesPage.css` to keep them bounds-contained inside `.form-group`, and stacked `.form-row` containers vertically on viewports <= 600px via a responsive media query to resolve layout overflow.
 **Human caught wrong / had to redirect?** No.
 
+## [2026-07-16] Phase 4 Task: Searchable dropdown for adding members
+**Asked for:** Replace exact-username member-adding with a searchable live-filtering autocomplete dropdown using a backend search endpoint.
+**Produced:**
+- Created `UserListView` in `backend/core/views.py` using DRF SearchFilter to search against `username` and `email`.
+- Mounted `/api/users/` in `backend/spreetail_backend/api_urls.py`.
+- Added unit tests in `UserListViewTest` class within `backend/core/tests.py` to cover listing all users and searching by username/email against paginated API responses.
+- Implemented state variables, a debounced query fetcher `useEffect` hook, and click-outside detector event listeners in `frontend/src/pages/GroupsPage.jsx`.
+- Replaced the plain text input in the "Add Member" form with the live searchable dropdown displaying matched usernames and emails (filtering out users who are already group members).
+- Appended styling rules for the dropdown list, items, hover state, and status message to `frontend/src/pages/GroupsPage.css`.
+**Human caught wrong / had to redirect?** Yes — user corrected the initial test case assumption: the test should assert against `results` keys in the response instead of turning off view pagination to match the project's consistent paginated response shape. Test cases were corrected to use `resp.data['results']` accordingly.
+
+
 
 
