@@ -69,6 +69,8 @@
   border-radius: 6px;
   font-size: 0.95rem;
   font-family: inherit;
+  width: 100%;
+  max-width: 100%;
 }
 
 .form-group input:focus,
@@ -76,6 +78,13 @@
   outline: none;
   border-color: #4f46e5;
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 .split-type-options {

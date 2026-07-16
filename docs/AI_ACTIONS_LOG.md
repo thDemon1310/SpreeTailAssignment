@@ -121,11 +121,14 @@ surfaced — the first "fix" treated the symptom, not the cause.
 **Human caught wrong / had to redirect?** Yes — backend `/me/` endpoint was queried as `/api/me/`, causing a 404. Diagnosed the mount point prefix `/api/auth/me/` from `api_urls.py`, and updated all occurrences in `AuthContext.jsx` and `DashboardPage.jsx`. Also, verified that 400 Bad Request responses on `/api/groups/1/members/` are standard input validation errors (user already in group or username non-existent) and not application bugs.
 
 ## [2026-07-16] Phase 4 Task: BUG 2 — UI styling fixes
-**Asked for:** Fix unstyled buttons on GroupsPage (Create New Group, Add Member) and ImportPage (Analyze CSV, Choose File) to match established design patterns.
+**Asked for:** Fix unstyled buttons on GroupsPage (Create New Group, Add Member) and ImportPage (Analyze CSV, Choose File) to match established design patterns. Also, resolve low-contrast white-card text (e.g. "Flat rent", "Members", "Summary") and ExpensesPage form-card layout overflow.
 **Produced:**
 - Created global `.btn`, `.btn.primary`, `.btn.secondary`, `.btn-primary`, and `.btn-secondary` classes in `frontend/src/index.css` matching the `#4f46e5` primary theme colors, font styling, padding, transitions, and hover properties found elsewhere in the app.
 - Added `className="btn primary"` to the "Analyze CSV" button in `ImportPage.jsx`.
 - Styled the custom file upload input (`input[type="file"]`) and its `::file-selector-button` in `ImportPage.css` to match the application's visual aesthetics.
+- Added a systematic CSS inheritance rule in `index.css` to override body text-color inheritance for all white-card container classes (making all standard text inherit `#1f2937` instead of near-white, restoring high-contrast legibility).
+- Added width and max-width style properties to `input` and `select` elements in `ExpensesPage.css` to keep them bounds-contained inside `.form-group`, and stacked `.form-row` containers vertically on viewports <= 600px via a responsive media query to resolve layout overflow.
 **Human caught wrong / had to redirect?** No.
+
 
 

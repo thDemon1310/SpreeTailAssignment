@@ -60,7 +60,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Add member to existing group from UI (direct-add) — Added inline form to selected group view & updated backend view/serializer to query via username or email
 - [x] Fix broken Import preview UI (newline split bug) — Corrected file reader string split regex to handle standard carriage-return/newline characters properly
 - [x] **BUG 1 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
-- [x] **BUG 2 — UI styling fixes**: Styled unstyled buttons on GroupsPage and ImportPage globally and added input[type="file"] selector styles to match the application button patterns.
+- [x] **BUG 2 — UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
 - [ ] **GATE 4:** human walks through the full UI once, end to end, before deploy
 
 ## Phase 5 — Optional AI/LLM feature (bonus — do not start until Phases 0–4 are done and gated)

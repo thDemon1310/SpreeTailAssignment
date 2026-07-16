@@ -168,3 +168,23 @@ C. Define global `.btn.primary` and `.btn.secondary` classes in `index.css` matc
 **Why:** The app's existing pages (`ExpensesPage`, `SettlePage`, `ImportPage`) use a combination of classes like `btn primary`, `btn secondary`, `btn-primary`, and `btn-secondary`, but the corresponding styles were not defined globally. Option C implements these classes in `index.css` systematically to match the visual styling (colors, transitions, border radii) already established on pages like `ExpensesPage` (e.g. `#4f46e5` for primary buttons), ensuring consistency across all pages and resolving all unstyled buttons simultaneously.
 **Tradeoff accepted:** None. This consolidates button styling into the main stylesheet rather than polluting local component CSS files.
 **Reversible?** Yes, by modifying `index.css`.
+
+## [2026-07-16] Decision: High-contrast card text colors
+**Options considered:**
+A. Add page-specific overrides in `GroupsPage.css`, `ExpensesPage.css`, and `BalancesPage.css` for every heading, cell, and text element on the page.
+B. Modify the white card backgrounds to dark backgrounds (matching the body background).
+C. Add a global text color inheritance rule for white card container classes in `index.css` to set the default text to a dark charcoal color `#1f2937`.
+**Chosen:** C — Global text color override for white card classes.
+**Why:** Option A is highly repetitive, prone to bugs (missing elements), and hard to maintain. Option B would require changing the layout's color scheme which was previously established. Option C solves the contrast issue systematically: by setting `color: #1f2937` on all white card classes (`.group-sidebar`, `.group-card`, `.expenses-section`, `.form-card`, `.group-selector`, `.balances-summary`, `.drill-down-card`), all nested text elements (headers, paragraphs, table rows) automatically inherit high-contrast dark text, while any custom colored indicators (like red/green balance values) remain unaffected.
+**Tradeoff accepted:** None.
+**Reversible?** Yes, by editing `index.css`.
+
+## [2026-07-16] Decision: ExpensesPage form-card width overflow fix
+**Options considered:**
+A. Use a smaller font size or padding for input fields on the page.
+B. Set form inputs to `width: 100%` and `max-width: 100%`, and stack form rows vertically using a responsive media query for narrow viewports.
+**Chosen:** B — Flexible inputs with responsive stacking.
+**Why:** Option A does not prevent overflow on small screen sizes. Option B ensures input fields size themselves relative to their flex parent without exceeding card boundaries, and stacks them vertically on screen widths <= 600px, creating a clean mobile-friendly layout.
+**Tradeoff accepted:** Form fields stack on narrow screens, changing from horizontal to vertical. This is standard and expected responsive design behavior.
+**Reversible?** Yes.
+

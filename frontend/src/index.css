@@ -159,3 +159,14 @@ body {
 .btn.secondary:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
 }
+
+/* --- High Contrast Text inside light cards --- */
+.group-sidebar, 
+.group-card, 
+.expenses-section, 
+.form-card, 
+.group-selector, 
+.balances-summary, 
+.drill-down-card {
+  color: #1f2937;
+}
