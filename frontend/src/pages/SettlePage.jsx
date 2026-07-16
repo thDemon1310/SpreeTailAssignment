@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import './SettlePage.css';
 
 export default function SettlePage() {
+  const { refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,15 +19,17 @@ export default function SettlePage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchGroups(selectedGroup?.id);
+  }, [refreshTrigger]);
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
       const { data } = await api.get('/groups/');
       setGroups(data);
       if (data.length > 0) {
-        selectGroup(data[0]);
+        const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
+        const groupToSelect = found || data[0];
+        selectGroup(groupToSelect);
       }
     } catch (err) {
       setError('Failed to load groups');
@@ -64,6 +68,7 @@ export default function SettlePage() {
       });
       setSuccess('Settlement recorded successfully!');
       setAmount('');
+      triggerRefresh();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to record settlement.');
     } finally {

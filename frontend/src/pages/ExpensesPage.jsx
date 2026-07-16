@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import './ExpensesPage.css';
 
 export default function ExpensesPage() {
+  const { refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   
@@ -22,15 +24,17 @@ export default function ExpensesPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchGroups(selectedGroup?.id);
+  }, [refreshTrigger]);
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
       const { data } = await api.get('/groups/');
       setGroups(data);
       if (data.length > 0) {
-        selectGroup(data[0]);
+        const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
+        const groupToSelect = found || data[0];
+        selectGroup(groupToSelect);
       }
     } catch (err) {
       setError('Failed to load groups');
@@ -115,6 +119,7 @@ export default function ExpensesPage() {
       const details = {};
       selectedGroup.memberships.forEach(m => { details[m.user_id] = ''; });
       setSplitDetails(details);
+      triggerRefresh();
     } catch (err) {
       const detail = err.response?.data;
       if (typeof detail === 'object') {

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import './BalancesPage.css';
 
 export default function BalancesPage() {
+  const { refreshTrigger } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [balances, setBalances] = useState({});
@@ -15,20 +17,41 @@ export default function BalancesPage() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchGroups(selectedGroup?.id);
+  }, [refreshTrigger]);
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
       const { data } = await api.get('/groups/');
       setGroups(data);
       if (data.length > 0) {
-        selectGroup(data[0]);
+        const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
+        const groupToSelect = found || data[0];
+        setSelectedGroup(groupToSelect);
+        
+        // Fetch balances for this group
+        const { data: balData } = await api.get(`/groups/${groupToSelect.id}/balances/`);
+        setBalances(balData);
+
+        // Fetch drilldown if active
+        if (detailUser) {
+          const userId = detailUser.user_id;
+          const member = groupToSelect.memberships.find(m => m.user_id.toString() === userId.toString());
+          setDetailUser(member || { user_id: userId, username: `User ${userId}` });
+          
+          const { data: drillData } = await api.get(`/groups/${groupToSelect.id}/balances/${userId}/`);
+          setDetailData(drillData);
+        }
       } else {
+        setSelectedGroup(null);
+        setBalances({});
+        setDetailUser(null);
+        setDetailData(null);
         setLoading(false);
       }
     } catch (err) {
       setError('Failed to load groups');
+    } finally {
       setLoading(false);
     }
   };
@@ -36,6 +59,7 @@ export default function BalancesPage() {
   const selectGroup = async (group) => {
     setSelectedGroup(group);
     setDetailUser(null);
+    setDetailData(null);
     setLoading(true);
     try {
       const { data } = await api.get(`/groups/${group.id}/balances/`);

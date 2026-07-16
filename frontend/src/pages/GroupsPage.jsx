@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import './GroupsPage.css';
 
 export default function GroupsPage() {
+  const { refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -19,15 +21,17 @@ export default function GroupsPage() {
   const [addMemberLoading, setAddMemberLoading] = useState(false);
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchGroups(selectedGroup?.id);
+  }, [refreshTrigger]);
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
       const { data } = await api.get('/groups/');
       setGroups(data);
       if (data.length > 0) {
-        selectGroup(data[0]);
+        const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
+        const groupToSelect = found || data[0];
+        selectGroup(groupToSelect, false);
       } else {
         setLoading(false);
       }
@@ -37,13 +41,15 @@ export default function GroupsPage() {
     }
   };
 
-  const selectGroup = async (group) => {
+  const selectGroup = async (group, isManual = false) => {
     setSelectedGroup(group);
     setLoading(true);
-    setShowAddMemberForm(false);
-    setAddUsername('');
-    setAddJoinedOn(new Date().toISOString().split('T')[0]);
-    setAddMemberError('');
+    if (isManual) {
+      setShowAddMemberForm(false);
+      setAddUsername('');
+      setAddJoinedOn(new Date().toISOString().split('T')[0]);
+      setAddMemberError('');
+    }
     try {
       const { data } = await api.get(`/groups/${group.id}/expenses/`);
       setExpenses(data);
@@ -75,6 +81,7 @@ export default function GroupsPage() {
       setAddUsername('');
       setAddJoinedOn(new Date().toISOString().split('T')[0]);
       setShowAddMemberForm(false);
+      triggerRefresh();
     } catch (err) {
       const data = err.response?.data;
       let errMsg = 'Failed to add member';
@@ -112,7 +119,7 @@ export default function GroupsPage() {
       setNewGroupName('');
       setNewGroupDesc('');
       setShowCreateForm(false);
-      fetchGroups();
+      triggerRefresh();
     } catch (err) {
       setError('Failed to create group');
     } finally {
@@ -166,7 +173,7 @@ export default function GroupsPage() {
                 <li 
                   key={g.id} 
                   className={selectedGroup?.id === g.id ? 'active' : ''}
-                  onClick={() => selectGroup(g)}
+                  onClick={() => selectGroup(g, true)}
                 >
                   {g.name}
                 </li>

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 import "./ImportPage.css";
 
 export default function ImportPage() {
+    const { refreshTrigger, triggerRefresh } = useAuth();
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [file, setFile] = useState(null);
@@ -17,15 +19,16 @@ export default function ImportPage() {
     const [resolvedFeedback, setResolvedFeedback] = useState(null);
 
     useEffect(() => {
-        fetchGroups();
-    }, []);
+        fetchGroups(selectedGroup?.id);
+    }, [refreshTrigger]);
 
-    const fetchGroups = async () => {
+    const fetchGroups = async (keepSelectedGroupId = null) => {
         try {
             const { data } = await api.get('/groups/');
             setGroups(data);
             if (data.length > 0) {
-                setSelectedGroup(data[0]);
+                const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
+                setSelectedGroup(found || data[0]);
             }
         } catch (err) {
             setError("Failed to load groups");
@@ -73,6 +76,7 @@ export default function ImportPage() {
       setBatch(res.data);
       fetchAnomalies(res.data.batch_id);
       setPreviewMode(true);
+      triggerRefresh();
     } catch (err) {
       setError(err.response?.data?.detail || "Import failed");
     } finally {
@@ -98,6 +102,7 @@ export default function ImportPage() {
       setResolvedFeedback(anomalyId);
       setTimeout(() => setResolvedFeedback(null), 2000);
       fetchAnomalies(batch.batch_id);
+      triggerRefresh();
     } catch (err) {
       alert(err.response?.data?.detail || "Resolution failed");
     }
