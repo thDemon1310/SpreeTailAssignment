@@ -591,3 +591,17 @@ def resolve_anomaly(request, group_id, anomaly_id):
     
     return Response({'detail': 'Resolved.'})
 
+
+from rest_framework import filters
+
+class UserListView(generics.ListAPIView):
+    """
+    GET /api/users/ — list and search all users in the system.
+    """
+    queryset = User.objects.all().order_by('username')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'email']
+
+

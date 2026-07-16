@@ -245,3 +245,35 @@ class MembershipManagementTest(TestCase):
             'user_id': self.priya.id, 'joined_on': '2026-02-01',
         })
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class UserListViewTest(TestCase):
+    """Tests for GET /api/users/ list and search."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.aisha = User.objects.create_user('aisha', 'aisha@example.com', 'TestPass123!')
+        self.rohan = User.objects.create_user('rohan', 'rohan@example.com', 'TestPass123!')
+        self.priya = User.objects.create_user('priya', 'priya@example.com', 'TestPass123!')
+        
+        login = self.client.post('/api/token/', {'username': 'aisha', 'password': 'TestPass123!'})
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {login.data["access"]}')
+
+    def test_list_all_users(self):
+        resp = self.client.get('/api/users/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # 3 users in total
+        self.assertEqual(len(resp.data['results']), 3)
+
+    def test_search_users_by_username(self):
+        resp = self.client.get('/api/users/', {'search': 'roh'})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data['results']), 1)
+        self.assertEqual(resp.data['results'][0]['username'], 'rohan')
+
+    def test_search_users_by_email(self):
+        resp = self.client.get('/api/users/', {'search': 'priya@example.com'})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data['results']), 1)
+        self.assertEqual(resp.data['results'][0]['username'], 'priya')
+
