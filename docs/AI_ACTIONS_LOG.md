@@ -108,3 +108,15 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Modified `frontend/src/pages/ImportPage.jsx` `ResolutionInputs` component to render the payer select dropdown for `name_mismatch` anomalies, allowing `paid_by_id` to be selected and sent to the backend.
 - Modified `backend/core/tests_resolution_api.py` to add `test_apply_name_mismatch` unit test confirming successful resolution of inconsistent payer name anomalies.
 **Human caught wrong / had to redirect?** No.
+
+## [2026-07-16] Phase 4 Task: BUG 1 — Home/Dashboard and other pages stale data
+**Asked for:** Fix stale frontend pages showing stale state after actions (resolving an anomaly, adding an expense, settling up) by implementing a systemic refetching mechanism.
+**Produced:**
+- Extended `frontend/src/context/AuthContext.jsx` to fetch and store `user.id` from `/auth/me/` on app initialization and login.
+- Exposed a global `refreshTrigger` integer counter and `triggerRefresh()` helper function from `AuthContext`.
+- Updated `DashboardPage.jsx` to dynamically fetch group counts, total expenses count, and personal balances ("You Owe", "Owed to You") using parallel requests, reacting to changes in `refreshTrigger` and `user.id`.
+- Replaced the dashboard placeholder with a dynamic group balance summary card grid.
+- Subscribed `BalancesPage.jsx`, `GroupsPage.jsx`, `ExpensesPage.jsx`, `SettlePage.jsx`, and `ImportPage.jsx` to `refreshTrigger` so they reactive-fetch fresh data on trigger updates while preserving user selection states.
+- Integrated `triggerRefresh()` calls into all mutating actions: group creation, membership addition, expense creation, settlement creation, CSV upload, and anomaly resolution.
+**Human caught wrong / had to redirect?** Yes — backend `/me/` endpoint was queried as `/api/me/`, causing a 404. Diagnosed the mount point prefix `/api/auth/me/` from `api_urls.py`, and updated all occurrences in `AuthContext.jsx` and `DashboardPage.jsx`. Also, verified that 400 Bad Request responses on `/api/groups/1/members/` are standard input validation errors (user already in group or username non-existent) and not application bugs.
+

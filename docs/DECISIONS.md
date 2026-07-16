@@ -148,3 +148,13 @@ B. Per-type resolution endpoints (e.g. `POST /anomalies/{id}/resolve_bad_date/`)
 **Why:** All blocked anomaly types reduce to the same functional shape: the human supplies missing or corrected fields, and the row either proceeds to creation or gets discarded. A single endpoint can route the payload through specific validation checks based on `problem_type` without the routing overhead of many distinct endpoints, accommodating the strict time constraints.
 **Tradeoff accepted:** The generic endpoint pushes schema validation logic into the view layer rather than leaning on strict per-type Django REST Framework serializers. We lose self-documenting API schemas (like Swagger/OpenAPI) for the specific `corrected_data` shapes required by each anomaly.
 **Reversible?** Yes — we can later split the generic endpoint into individual ones or introduce polymorphic DRF serializers without changing the underlying `ImportAnomaly` database model.
+
+## [2026-07-16] Decision: Global reactive refresh trigger for stale frontend data
+**Options considered:**
+A. Add manual refetch function calls to each page on mount and route navigation events.
+B. Move to a data-fetching library (like React Query or SWR) that handles caching and automatic invalidation.
+C. Implement a global `refreshTrigger` state counter in `AuthContext` with mutation-based invalidation.
+**Chosen:** C — Global `refreshTrigger` counter.
+**Why:** Option A is fragile and leads to repetitive one-off refetch calls that are hard to maintain. Option B would require a significant rewrite of the app's data-fetching codebase (currently written in simple `useEffect` hooks calling Axios directly), which violates the "not a rewrite" rule. Option C is a robust, lightweight, and systemic pattern that integrates cleanly into the existing context: any page can subscribe to the trigger in its `useEffect` dependency array, and any mutation triggers a state update that reactively refreshes all active consumers.
+**Tradeoff accepted:** Every subscribed page refetches its data on any mutation, even if the mutation didn't affect its specific domain (e.g., adding an expense in group A fetches groups list in Settle page). However, given the lightweight nature of our endpoints, this overhead is negligible.
+**Reversible?** Yes — since components still use standard Axios calls inside `useEffect`, transitioning to React Query later would only require replacing the hooks without changing the component template structure.
