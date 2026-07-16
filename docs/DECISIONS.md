@@ -197,3 +197,13 @@ B. Replace the exact username input with a searchable live-filtering autocomplet
 **Tradeoff accepted:** Users are added immediately to groups by any active group member, rather than receiving an invitation to join.
 **Reversible?** Yes — we can later swap the backend `members/` POST handler to create an invite record instead of a direct `Membership` row, and display invites in a notification panel.
 
+## [2026-07-17] Decision: Enforce self-payment on Expense and Settlement creation
+**Options considered:**
+A. Rely on frontend-only UI validation to hide/lock other members from being chosen.
+B. Enforce on both frontend (read-only current user name field) and backend (verify request.user matches and default/error otherwise).
+**Chosen:** B — Enforce on both frontend and backend.
+**Why:** Allowing users to create expenses or settlements on behalf of other users represents a major data integrity and security risk (fabricating transactions). Enforcing this rule only in the UI is insufficient as a user can spoof the request via direct API tools (like curl or Postman). By checking `paid_by` / `from_user_id` against `request.user` on the backend, we reject spoofed requests with a 400 Bad Request and automatically default to the requesting user when omitted.
+**Tradeoff accepted:** Users can only log expenses and settlements that they themselves paid. A user cannot log a settlement/expense on behalf of someone else (e.g. if one member is offline and asks another to log it for them).
+**Reversible?** Yes — if a live-session change request requires delegated logging, we can relax this by changing the backend check.
+
+

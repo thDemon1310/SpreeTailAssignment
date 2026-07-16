@@ -222,7 +222,7 @@ class ExpenseCreateSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=5)
     date = serializers.DateField()
     split_type = serializers.ChoiceField(choices=Expense.SPLIT_TYPE_CHOICES)
-    paid_by_id = serializers.IntegerField()
+    paid_by_id = serializers.IntegerField(required=False, allow_null=True)
     participant_ids = serializers.ListField(
         child=serializers.IntegerField(),
         min_length=1,
@@ -251,6 +251,8 @@ class ExpenseCreateSerializer(serializers.Serializer):
         return value
 
     def validate_paid_by_id(self, value):
+        if value is None:
+            return value
         User = get_user_model()
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError(f'User {value} does not exist.')
@@ -259,6 +261,21 @@ class ExpenseCreateSerializer(serializers.Serializer):
     def validate(self, data):
         """Cross-field validation and split_details key coercion."""
         User = get_user_model()
+        request = self.context.get('request')
+
+        # Enforce self-payment: paid_by must be request.user
+        if request and request.user and request.user.is_authenticated:
+            paid_by_id = data.get('paid_by_id')
+            if paid_by_id is not None and paid_by_id != request.user.id:
+                raise serializers.ValidationError(
+                    {'paid_by_id': 'You can only create an expense with yourself as paid_by.'}
+                )
+            data['paid_by_id'] = request.user.id
+        else:
+            if not data.get('paid_by_id'):
+                raise serializers.ValidationError(
+                    {'paid_by_id': 'paid_by_id is required when request context is not present.'}
+                )
 
         # Validate all participant_ids exist
         participant_ids = data['participant_ids']

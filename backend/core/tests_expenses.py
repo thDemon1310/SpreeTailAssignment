@@ -475,3 +475,18 @@ class ExpenseValidationTest(TestCase):
         self.client.post(self.url, payload, format='json')
         self.assertEqual(Expense.objects.count(), 0)
         self.assertEqual(ExpenseSplit.objects.count(), 0)
+
+    def test_spoofed_paid_by_rejected(self):
+        """POST with paid_by_id that is NOT the requesting user must be rejected with 400."""
+        bob = User.objects.create_user(username='bob_spoof', email='bob_spoof@test.com', password='pass')
+        payload = self._base_payload()
+        payload['paid_by_id'] = bob.id  # bob is NOT the authenticated user (which is alice_v)
+        resp = self.client.post(self.url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('paid_by_id', resp.data)
+        
+        # Test that if not provided, it defaults to the requesting user
+        payload.pop('paid_by_id')
+        resp = self.client.post(self.url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['paid_by_id'], self.alice.id)

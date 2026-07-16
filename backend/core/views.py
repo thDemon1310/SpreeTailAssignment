@@ -258,15 +258,32 @@ def settlement_list_create(request, group_id):
         return Response(SettlementSerializer(settlements, many=True).data)
     
     # POST
-    # expects: from_user_id, to_user_id, amount, date
+    # expects: from_user_id (optional, defaults to requesting user), to_user_id, amount, date
     from_user_id = request.data.get('from_user_id')
     to_user_id = request.data.get('to_user_id')
     amount = request.data.get('amount')
     date = request.data.get('date')
     
-    if not all([from_user_id, to_user_id, amount, date]):
-        return Response({'detail': 'from_user_id, to_user_id, amount, date are required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not all([to_user_id, amount, date]):
+        return Response({'detail': 'to_user_id, amount, and date are required.'}, status=status.HTTP_400_BAD_REQUEST)
         
+    # Enforce from_user is request.user
+    if from_user_id is not None:
+        try:
+            if int(from_user_id) != request.user.id:
+                return Response({'detail': 'You can only record a settlement where you are the payer.'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({'detail': 'Invalid from_user_id.'}, status=status.HTTP_400_BAD_REQUEST)
+    from_user_id = request.user.id
+
+    if int(to_user_id) == from_user_id:
+        return Response({'detail': 'Cannot settle with yourself.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from django.utils.dateparse import parse_date
+    settlement_date = parse_date(str(date))
+    if not settlement_date:
+        return Response({'detail': 'Invalid date format.'}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         amount = Decimal(str(amount))
         if amount <= Decimal('0'):
@@ -274,15 +291,25 @@ def settlement_list_create(request, group_id):
     except Exception:
         return Response({'detail': 'Invalid amount.'}, status=status.HTTP_400_BAD_REQUEST)
         
-    from_user = get_object_or_404(User, id=from_user_id)
+    from_user = request.user
     to_user = get_object_or_404(User, id=to_user_id)
+    
+    # Check that to_user is a member and active on the settlement date (left_on has not passed)
+    to_membership = group.memberships.filter(user=to_user).first()
+    if not to_membership:
+        return Response({'detail': 'Recipient is not a member of this group.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if to_membership.joined_on > settlement_date:
+        return Response({'detail': 'Recipient was not a member of the group on this settlement date.'}, status=status.HTTP_400_BAD_REQUEST)
+    if to_membership.left_on and settlement_date > to_membership.left_on:
+        return Response({'detail': 'Recipient was no longer an active member of this group on this settlement date.'}, status=status.HTTP_400_BAD_REQUEST)
     
     settlement = Settlement.objects.create(
         group=group,
         from_user=from_user,
         to_user=to_user,
         amount=amount,
-        date=date
+        date=settlement_date
     )
     
     return Response(SettlementSerializer(settlement).data, status=status.HTTP_201_CREATED)
