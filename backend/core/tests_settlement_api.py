@@ -71,3 +71,35 @@ class SettlementAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(float(response.json()[0]['amount']), 50.0)
+
+    def test_spoofed_from_user_rejected(self):
+        """POST with from_user_id that is NOT the requesting user must be rejected with 400."""
+        payload = {
+            'from_user_id': self.aisha.id,  # aisha is NOT the authenticated user (rohan is)
+            'to_user_id': self.rohan.id,
+            'amount': '10.00',
+            'date': timezone.now().date().isoformat()
+        }
+        resp = self.client.post(self.url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        # Test that if not provided, it defaults to the requesting user (rohan)
+        payload.pop('from_user_id')
+        payload['to_user_id'] = self.aisha.id
+        resp = self.client.post(self.url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['from_user'], self.rohan.id)
+
+    def test_recipient_must_be_active_member(self):
+        """POST with recipient who has left the group must be rejected with 400."""
+        charlie = User.objects.create_user(username='Charlie', email='c@t.com', password='pass')
+        today = timezone.now().date()
+        Membership.objects.create(user=charlie, group=self.group, joined_on=today, left_on=today)
+        
+        payload = {
+            'to_user_id': charlie.id,
+            'amount': '10.00',
+            'date': (today + timezone.timedelta(days=1)).isoformat() # date is after Charlie left
+        }
+        resp = self.client.post(self.url, payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
