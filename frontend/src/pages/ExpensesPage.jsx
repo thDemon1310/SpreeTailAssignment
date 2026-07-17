@@ -4,7 +4,7 @@ import api from '../api/client';
 import './ExpensesPage.css';
 
 export default function ExpensesPage() {
-  const { refreshTrigger, triggerRefresh } = useAuth();
+  const { user, refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   
@@ -12,7 +12,6 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('INR');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paidById, setPaidById] = useState('');
   const [splitType, setSplitType] = useState('equal');
   const [participantIds, setParticipantIds] = useState([]);
   const [splitDetails, setSplitDetails] = useState({});
@@ -47,7 +46,6 @@ export default function ExpensesPage() {
     setSelectedGroup(group);
     const activeMembers = group.memberships.filter(m => !m.left_on);
     if (activeMembers.length > 0) {
-      setPaidById(activeMembers[0].user_id.toString());
       setParticipantIds(activeMembers.map(m => m.user_id));
       
       const details = {};
@@ -104,7 +102,7 @@ export default function ExpensesPage() {
         amount,
         currency,
         date,
-        paid_by_id: parseInt(paidById, 10),
+        paid_by_id: user?.id,
         split_type: splitType,
         participant_ids: participantIds,
         split_details: cleanedDetails,
@@ -187,11 +185,16 @@ export default function ExpensesPage() {
                 </div>
                 <div className="form-group">
                   <label>Paid By</label>
-                  <select value={paidById} onChange={e => setPaidById(e.target.value)} required>
-                    {selectedGroup?.memberships.filter(m => !m.left_on).map(m => (
-                      <option key={m.user_id} value={m.user_id}>{m.username}</option>
-                    ))}
-                  </select>
+                  <input 
+                    type="text" 
+                    value={user?.username || ''} 
+                    readOnly 
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      cursor: 'not-allowed',
+                      color: 'var(--text-secondary, #a0aec0)'
+                    }} 
+                  />
                 </div>
               </div>
 

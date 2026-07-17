@@ -74,6 +74,14 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] **BUG 2 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
 - [x] **BUG 3 - UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
 
+
 ## Features
 - [x] Add member to existing group from UI (direct-add) — Added inline form to selected group view & updated backend view/serializer to query via username or email
 - [x] **Searchable dropdown for adding members**: Implemented backend `/api/users/` search endpoint and frontend live search-as-you-type autocomplete dropdown in "Add Member" form.
+
+## Business Rule Correction (Self-Payment Only)
+- [x] Enforce self-payment on Expense creation (backend validation, front-end read-only field) — Removed paid_by dropdown, replaced with read-only logged-in user, and enforced request.user as payer on backend
+- [x] Enforce self-payment on Settlement creation (backend validation, front-end read-only field, active members dropdown for recipient) — Locked payer to requesting user on both backend and frontend, and filtered recipient options to active members
+- [x] Write API tests verifying that spoofed paid_by / from_user are rejected/overridden — Added tests to test_expenses.py and tests_settlement_api.py verifying 400 rejection and defaulting to request.user
+- [x] Update DECISIONS.md with the business rule logging — Logged the decision and tradeoffs in docs/DECISIONS.md
+- [ ] **GATE 4.5:** human confirms the self-payment business rule corrections work locally and backend verification passes
