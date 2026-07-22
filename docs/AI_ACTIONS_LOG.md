@@ -151,6 +151,25 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Logged the decision and tradeoffs in `docs/DECISIONS.md`.
 **Human caught wrong / had to redirect?** Yes — the settlement page initially threw a `ReferenceError` because the `user` object was not destructured from `useAuth` in `SettlePage.jsx`. This was caught and corrected by adding `user` to the destructuring list.
 
+## [2026-07-22] Leave Group Feature
+**Asked for:** Add a backend-enforced leave group endpoint that checks for a zero balance, sets left_on, and prevents leaving on behalf of others. Add frontend button and error handling, tests, and log in DECISIONS.md.
+**Produced:**
+- Created view `leave_group` in `backend/core/views.py` doing balance validation on `calculate_balances()` and identifying net creditors/debtors, and registered it in `backend/core/urls.py`.
+- Wrote API unit tests in `backend/core/tests_leave_group.py` verifying blocked/succeeded scenarios, left_on field setting, access control, and prior expense calculations integrity.
+- Destructured `user` from `useAuth` in `frontend/src/pages/GroupsPage.jsx`, added `leaveLoading`/`leaveError` states, and implemented `handleLeaveGroup` handling balance validation messages and redirecting/updating page states.
+- Rendered the Actions column with the "Leave Group" button in `members-table` (conditional on the logged-in user's own active membership row).
+- Updated styling rules for `.leave-btn` and `.leave-error-banner` in `frontend/src/pages/GroupsPage.css`.
+- Documented decisions and tradeoffs in `docs/DECISIONS.md` and updated task status in `TODO.md`.
+**Human caught wrong / had to redirect?** No.
+
+## [2026-07-22] BUG 4: Dashboard showing left groups
+**Asked for:** Fix stale groups displaying on Dashboard even after the user has left them.
+**Produced:**
+- Modified `GroupListCreateView` and `GroupDetailView` in `backend/core/views.py` to filter querysets to active memberships only (`memberships__left_on__isnull=True`).
+**Human caught wrong / had to redirect?** No.
+
+
+
 
 
 

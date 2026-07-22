@@ -206,4 +206,14 @@ B. Enforce on both frontend (read-only current user name field) and backend (ver
 **Tradeoff accepted:** Users can only log expenses and settlements that they themselves paid. A user cannot log a settlement/expense on behalf of someone else (e.g. if one member is offline and asks another to log it for them).
 **Reversible?** Yes — if a live-session change request requires delegated logging, we can relax this by changing the backend check.
 
+## [2026-07-22] Decision: Enforce zero-balance check for leaving a group
+**Options considered:**
+A. Allow users to leave with a warning only (allow-with-warning), letting their balance remain active in the calculations.
+B. Block users from leaving if they have any outstanding balance in either direction (owing or being-owed), reusing the established 2dp rounding/tolerance.
+**Chosen:** B — Block on non-zero balance.
+**Why:** Allowing users to leave a group while still owing money or being owed money creates a major data integrity concern: their outstanding balances could end up orphaned or unaccounted for in future settlements once they disappear from the active membership view. Enforcing that the balance must be exactly zero (within the established `Decimal('0.00')` rounding policy/tolerance, meaning `abs(balance) < Decimal('0.01')`) ensures that all debts are settled before a member leaves, guaranteeing zero-sum balance sheet consistency.
+**Tradeoff accepted:** Users are forced to settle up all outstanding debts before they can leave a group. If other members are unresponsive or offline, a user might be blocked from leaving indefinitely until someone records a settlement.
+**Reversible?** Yes — we can relax the backend check to a warning or change the balance verification logic if needed in a live-session change request.
+
+
 
