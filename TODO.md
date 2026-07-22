@@ -85,3 +85,9 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Write API tests verifying that spoofed paid_by / from_user are rejected/overridden — Added tests to test_expenses.py and tests_settlement_api.py verifying 400 rejection and defaulting to request.user
 - [x] Update DECISIONS.md with the business rule logging — Logged the decision and tradeoffs in docs/DECISIONS.md
 - [ ] **GATE 4.5:** human confirms the self-payment business rule corrections work locally and backend verification passes
+
+## Leave Group Feature
+- [x] Implement backend endpoint POST /api/groups/{id}/leave/ and write API unit tests verifying balance checks and left_on update — Built leave_group endpoint with balance validation checking net creditors/debtors and sets left_on
+- [~] Implement frontend "Leave Group" button, error handling, redirect, and state updates
+- [ ] Update docs/DECISIONS.md with the Leave Group business logic decisions
+

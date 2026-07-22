@@ -315,6 +315,53 @@ def settlement_list_create(request, group_id):
     return Response(SettlementSerializer(settlement).data, status=status.HTTP_201_CREATED)
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def leave_group(request, group_id):
+    """
+    POST /api/groups/<group_id>/leave/
+    Allows the authenticated user to leave the group, setting left_on to today's date,
+    only if their balance is exactly zero.
+    """
+    group = get_object_or_404(Group, id=group_id)
+    membership = group.memberships.filter(user=request.user).first()
+    
+    if not membership:
+        return Response({'detail': 'You are not a member of this group.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if membership.left_on is not None:
+        return Response({'detail': 'You have already left this group.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # Get all balances to find who is owed or who owes
+    balances = calculate_balances(group_id)
+    user_balance = balances.get(request.user.id, Decimal('0.00'))
+    
+    if abs(user_balance) >= Decimal('0.01'):
+        if user_balance < 0:
+            # User owes money: list members who have a positive balance (creditors)
+            creditors = [
+                u.username for u in User.objects.filter(id__in=[uid for uid, bal in balances.items() if bal > Decimal('0.00')])
+            ]
+            creditors_str = ", ".join(creditors)
+            msg = f"Cannot leave group. You have an outstanding balance of {user_balance:.2f} INR. You owe the following member(s): {creditors_str}."
+        else:
+            # User is owed money: list members who have a negative balance (debtors)
+            debtors = [
+                u.username for u in User.objects.filter(id__in=[uid for uid, bal in balances.items() if bal < Decimal('0.00')])
+            ]
+            debtors_str = ", ".join(debtors)
+            msg = f"Cannot leave group. You have an outstanding balance of +{user_balance:.2f} INR. You are owed by the following member(s): {debtors_str}."
+            
+        return Response({'detail': msg}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # Success: set left_on to today's date
+    from django.utils import timezone
+    membership.left_on = timezone.now().date()
+    membership.save(update_fields=['left_on'])
+    
+    return Response({'detail': 'Successfully left the group.'})
+
+
 # --------------- Balances ---------------
 
 @api_view(['GET'])
