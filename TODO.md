@@ -20,7 +20,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 - [x] Balance calculation function: per-group and per-person, excluding expenses outside a member's `Membership` window by date — `core/balance_calc.py`, SQL-level membership window filter, zero-sum invariant guaranteed, settlement formula corrected (made-received not received-made), 15 tests passing
 - [x] Rounding policy applied consistently in both functions above — ROUND_HALF_UP to 2dp in split_calc (SCOPE.md #12), balance_calc sums stored Decimal values without re-rounding; DECISIONS.md [2026-07-11] cited
 - [x] Expense create/list/detail API using the tested split function — `ExpenseCreateSerializer` calls `calculate_splits`, writes Expense + ExpenseSplit atomically via `transaction.atomic()`; `expense_list_create` (GET/POST) + `expense_detail` (GET/DELETE) views; nested under `/api/groups/<id>/expenses/`; 24 API-level tests all passing (79 total)
-- [ ] Settlement create/list API, folded into balance calc — **deferred at GATE 2 by human instruction** (DECISIONS.md [2026-07-11]); must complete before GATE 5
+- [x] Settlement create/list API, folded into balance calc — Built settlement CRUD views and verified balance sheet updates via API unit tests.
 - [x] **GATE 2:** human hand-checks one manual balance calculation against the test output before import work begins
 
 ## Phase 3 — CSV Import Pipeline
