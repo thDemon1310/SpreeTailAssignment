@@ -93,3 +93,9 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Implement frontend "Leave Group" button, error handling, redirect, and state updates — Added Leave Group button under Actions column, handled balance validation errors, auto-redirected and reactively refreshed sidebar
 - [x] Update docs/DECISIONS.md with the Leave Group business logic decisions — Added decision log entry on zero-balance enforcement and rounding/tolerance reuse
 
+## Rejoin Group Feature
+- [x] Relax Membership unique constraint to (user, group, joined_on) on the database and apply the migration — Created migration 0004 removing unique_membership_per_group and creating unique_membership_per_group_date, and applied it
+- [~] Update add-member endpoint to allow rejoining and write unit tests verifying rejoining works and balances filter the gap period correctly
+- [ ] Update docs/DECISIONS.md with the Rejoin Group business logic decisions
+
+
