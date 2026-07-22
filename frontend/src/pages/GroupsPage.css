@@ -265,3 +265,35 @@
   color: #6b7280;
   text-align: center;
 }
+
+.leave-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.leave-btn:hover {
+  background: #b91c1c;
+}
+
+.leave-btn:disabled {
+  background: #fca5a5;
+  cursor: not-allowed;
+}
+
+.leave-error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}

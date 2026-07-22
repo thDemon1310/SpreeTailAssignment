@@ -4,7 +4,7 @@ import api from '../api/client';
 import './GroupsPage.css';
 
 export default function GroupsPage() {
-  const { refreshTrigger, triggerRefresh } = useAuth();
+  const { user, refreshTrigger, triggerRefresh } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -22,6 +22,9 @@ export default function GroupsPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [leaveError, setLeaveError] = useState('');
 
   useEffect(() => {
     fetchGroups(selectedGroup?.id);
@@ -66,12 +69,18 @@ export default function GroupsPage() {
   const fetchGroups = async (keepSelectedGroupId = null) => {
     try {
       const { data } = await api.get('/groups/');
-      setGroups(data);
-      if (data.length > 0) {
-        const found = keepSelectedGroupId ? data.find(g => g.id === keepSelectedGroupId) : null;
-        const groupToSelect = found || data[0];
+      // Filter out groups that the user has left
+      const activeGroups = data.filter(g => {
+        const myMem = g.memberships?.find(m => m.user_id === user?.id);
+        return !myMem || !myMem.left_on;
+      });
+      setGroups(activeGroups);
+      if (activeGroups.length > 0) {
+        const found = keepSelectedGroupId ? activeGroups.find(g => g.id === keepSelectedGroupId) : null;
+        const groupToSelect = found || activeGroups[0];
         selectGroup(groupToSelect, false);
       } else {
+        setSelectedGroup(null);
         setLoading(false);
       }
     } catch (err) {
@@ -83,6 +92,8 @@ export default function GroupsPage() {
   const selectGroup = async (group, isManual = false) => {
     setSelectedGroup(group);
     setLoading(true);
+    setLeaveError('');
+    setLeaveLoading(false);
     if (isManual) {
       setShowAddMemberForm(false);
       setAddUsername('');
@@ -98,6 +109,35 @@ export default function GroupsPage() {
       setError('Failed to load expenses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeaveGroup = async (groupId) => {
+    if (!window.confirm('Are you sure you want to leave this group?')) {
+      return;
+    }
+    setLeaveLoading(true);
+    setLeaveError('');
+    try {
+      await api.post(`/groups/${groupId}/leave/`);
+      // Refetch groups and trigger standard refresh
+      const { data } = await api.get('/groups/');
+      const activeGroups = data.filter(g => {
+        const myMem = g.memberships?.find(m => m.user_id === user?.id);
+        return !myMem || !myMem.left_on;
+      });
+      setGroups(activeGroups);
+      if (activeGroups.length > 0) {
+        selectGroup(activeGroups[0], true);
+      } else {
+        setSelectedGroup(null);
+      }
+      triggerRefresh();
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to leave the group.';
+      setLeaveError(msg);
+    } finally {
+      setLeaveLoading(false);
     }
   };
 
@@ -298,12 +338,15 @@ export default function GroupsPage() {
                     </div>
                   )}
 
+                  {leaveError && <div className="leave-error-banner">{leaveError}</div>}
+
                   <table className="members-table">
                     <thead>
                       <tr>
                         <th>Name</th>
                         <th>Joined On</th>
                         <th>Left On</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -312,6 +355,17 @@ export default function GroupsPage() {
                           <td>{m.username}</td>
                           <td>{m.joined_on}</td>
                           <td>{m.left_on || 'Active'}</td>
+                          <td>
+                            {m.user_id === user?.id && !m.left_on && (
+                              <button 
+                                className="leave-btn"
+                                onClick={() => handleLeaveGroup(selectedGroup.id)}
+                                disabled={leaveLoading}
+                              >
+                                {leaveLoading ? 'Leaving...' : 'Leave Group'}
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
