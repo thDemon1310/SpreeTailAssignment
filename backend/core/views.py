@@ -58,7 +58,8 @@ class GroupListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Group.objects.filter(
-            memberships__user=self.request.user
+            memberships__user=self.request.user,
+            memberships__left_on__isnull=True
         ).select_related('created_by').prefetch_related('memberships__user').distinct()
 
     def perform_create(self, serializer):
@@ -75,7 +76,8 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Group.objects.filter(
-            memberships__user=self.request.user
+            memberships__user=self.request.user,
+            memberships__left_on__isnull=True
         ).select_related('created_by').prefetch_related('memberships__user').distinct()
 
 

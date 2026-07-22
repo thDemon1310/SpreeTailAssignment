@@ -162,6 +162,13 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Documented decisions and tradeoffs in `docs/DECISIONS.md` and updated task status in `TODO.md`.
 **Human caught wrong / had to redirect?** No.
 
+## [2026-07-22] BUG 4: Dashboard showing left groups
+**Asked for:** Fix stale groups displaying on Dashboard even after the user has left them.
+**Produced:**
+- Modified `GroupListCreateView` and `GroupDetailView` in `backend/core/views.py` to filter querysets to active memberships only (`memberships__left_on__isnull=True`).
+**Human caught wrong / had to redirect?** No.
+
+
 
 
 

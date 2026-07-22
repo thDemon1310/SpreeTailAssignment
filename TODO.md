@@ -73,6 +73,8 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] **BUG 1- Fix broken Import preview UI (newline split bug)**: Corrected file reader string split regex to handle standard carriage-return/newline characters properly
 - [x] **BUG 2 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
 - [x] **BUG 3 - UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
+- [x] **BUG 4 — Dashboard showing left groups**: Filtered GroupListCreateView and GroupDetailView querysets on the backend to exclude groups where user has left (left_on__isnull=True)
+
 
 
 ## Features
