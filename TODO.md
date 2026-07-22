@@ -89,5 +89,5 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 ## Leave Group Feature
 - [x] Implement backend endpoint POST /api/groups/{id}/leave/ and write API unit tests verifying balance checks and left_on update — Built leave_group endpoint with balance validation checking net creditors/debtors and sets left_on
 - [x] Implement frontend "Leave Group" button, error handling, redirect, and state updates — Added Leave Group button under Actions column, handled balance validation errors, auto-redirected and reactively refreshed sidebar
-- [~] Update docs/DECISIONS.md with the Leave Group business logic decisions
+- [x] Update docs/DECISIONS.md with the Leave Group business logic decisions — Added decision log entry on zero-balance enforcement and rounding/tolerance reuse
 
