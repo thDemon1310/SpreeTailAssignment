@@ -95,7 +95,7 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 
 ## Rejoin Group Feature
 - [x] Relax Membership unique constraint to (user, group, joined_on) on the database and apply the migration — Created migration 0004 removing unique_membership_per_group and creating unique_membership_per_group_date, and applied it
-- [~] Update add-member endpoint to allow rejoining and write unit tests verifying rejoining works and balances filter the gap period correctly
+- [x] Update add-member endpoint to allow rejoining and write unit tests verifying rejoining works and balances filter the gap period correctly — Updated add_member endpoint and balance_calc to handle multiple stints, and added tests verifying rejoin and gap filtering.
 - [ ] Update docs/DECISIONS.md with the Rejoin Group business logic decisions
 
 

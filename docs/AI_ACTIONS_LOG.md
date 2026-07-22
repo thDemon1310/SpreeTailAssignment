@@ -168,9 +168,11 @@ surfaced — the first "fix" treated the symptom, not the cause.
 - Modified `GroupListCreateView` and `GroupDetailView` in `backend/core/views.py` to filter querysets to active memberships only (`memberships__left_on__isnull=True`).
 **Human caught wrong / had to redirect?** No.
 
-
-
-
-
-
-
+## [2026-07-23] Rejoin Group Feature: View and tests
+**Asked for:** Update add-member endpoint to allow rejoining and write unit tests verifying rejoining works and balances filter the gap period correctly.
+**Produced:**
+- Modified `backend/core/views.py` `add_member` to allow rejoining if the user has left, and validate that the new join date is after the latest leave date.
+- Modified `backend/core/balance_calc.py` to calculate user balances across multiple stints (membership windows).
+- Modified `backend/core/views.py` `group_user_balance_detail` and `leave_group` to handle multiple stints.
+- Created `backend/core/tests_rejoin.py` verifying the API endpoints and balance gap filtering.
+**Human caught wrong / had to redirect?** No.
