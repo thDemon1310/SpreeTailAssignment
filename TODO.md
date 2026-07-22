@@ -73,6 +73,8 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] **BUG 1- Fix broken Import preview UI (newline split bug)**: Corrected file reader string split regex to handle standard carriage-return/newline characters properly
 - [x] **BUG 2 — Home/Dashboard and other pages stale data**: Built global refresh trigger and refetched data reactively across Dashboard, Balances, Groups, Expenses, Settle, and Import pages.
 - [x] **BUG 3 - UI styling fixes**: Styled unstyled buttons and inputs across GroupsPage and ImportPage, resolved text contrast issues on white cards, and prevented form layout overflow on ExpensesPage.
+- [x] **BUG 4 — Dashboard showing left groups**: Filtered GroupListCreateView and GroupDetailView querysets on the backend to exclude groups where user has left (left_on__isnull=True)
+
 
 
 ## Features
@@ -85,3 +87,9 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Write API tests verifying that spoofed paid_by / from_user are rejected/overridden — Added tests to test_expenses.py and tests_settlement_api.py verifying 400 rejection and defaulting to request.user
 - [x] Update DECISIONS.md with the business rule logging — Logged the decision and tradeoffs in docs/DECISIONS.md
 - [ ] **GATE 4.5:** human confirms the self-payment business rule corrections work locally and backend verification passes
+
+## Leave Group Feature
+- [x] Implement backend endpoint POST /api/groups/{id}/leave/ and write API unit tests verifying balance checks and left_on update — Built leave_group endpoint with balance validation checking net creditors/debtors and sets left_on
+- [x] Implement frontend "Leave Group" button, error handling, redirect, and state updates — Added Leave Group button under Actions column, handled balance validation errors, auto-redirected and reactively refreshed sidebar
+- [x] Update docs/DECISIONS.md with the Leave Group business logic decisions — Added decision log entry on zero-balance enforcement and rounding/tolerance reuse
+
