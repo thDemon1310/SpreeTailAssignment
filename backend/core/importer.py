@@ -882,7 +882,7 @@ def detect_ambiguous_date(row: dict) -> Optional[AnomalySpec]:
 # Detection rule: stale member in split_with (Phase 3 Task 15)
 # ---------------------------------------------------------------------------
 
-def detect_stale_member(row: dict, name_to_user: dict, expense_date, resolved_users: list) -> tuple:
+def detect_stale_member(row: dict, name_to_user: dict, expense_date, resolved_users: list, group=None) -> tuple:
     """
     Detection method: cross-reference each split_with name against
     Membership.left_on relative to the expense date.
@@ -893,6 +893,7 @@ def detect_stale_member(row: dict, name_to_user: dict, expense_date, resolved_us
     (same redistribution rule as Kabir case, DECISIONS.md [2026-07-11]).
     """
     from datetime import date as date_cls
+    from django.db.models import Q
     if not expense_date:
         return resolved_users, [], None
 
@@ -904,13 +905,22 @@ def detect_stale_member(row: dict, name_to_user: dict, expense_date, resolved_us
     stale = []
     active = []
     for user in resolved_users:
-        try:
-            m = Membership.objects.get(user=user)
+        m = None
+        if group:
+            m = Membership.objects.filter(user=user, group=group).filter(
+                Q(left_on__isnull=True) | Q(left_on__gte=exp_date)
+            ).order_by('joined_on').first()
+            if not m:
+                m = Membership.objects.filter(user=user, group=group).order_by('-joined_on').first()
+        else:
+            m = Membership.objects.filter(user=user).order_by('-joined_on').first()
+
+        if m:
             if m.left_on and exp_date > m.left_on:
                 stale.append(user)
             else:
                 active.append(user)
-        except Membership.DoesNotExist:
+        else:
             stale.append(user)
 
     if not stale:
@@ -1197,7 +1207,7 @@ def run_import(
 
         # 15. Stale member check
         active_users, stale_users, stale_spec = detect_stale_member(
-            row, name_to_user, expense_date, resolved_users
+            row, name_to_user, expense_date, resolved_users, group
         )
         if stale_spec:
             result.anomalies.append(stale_spec)

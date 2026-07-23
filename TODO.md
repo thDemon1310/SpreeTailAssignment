@@ -20,7 +20,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done (one-line note 
 - [x] Balance calculation function: per-group and per-person, excluding expenses outside a member's `Membership` window by date — `core/balance_calc.py`, SQL-level membership window filter, zero-sum invariant guaranteed, settlement formula corrected (made-received not received-made), 15 tests passing
 - [x] Rounding policy applied consistently in both functions above — ROUND_HALF_UP to 2dp in split_calc (SCOPE.md #12), balance_calc sums stored Decimal values without re-rounding; DECISIONS.md [2026-07-11] cited
 - [x] Expense create/list/detail API using the tested split function — `ExpenseCreateSerializer` calls `calculate_splits`, writes Expense + ExpenseSplit atomically via `transaction.atomic()`; `expense_list_create` (GET/POST) + `expense_detail` (GET/DELETE) views; nested under `/api/groups/<id>/expenses/`; 24 API-level tests all passing (79 total)
-- [ ] Settlement create/list API, folded into balance calc — **deferred at GATE 2 by human instruction** (DECISIONS.md [2026-07-11]); must complete before GATE 5
+- [x] Settlement create/list API, folded into balance calc — Built settlement CRUD views and verified balance sheet updates via API unit tests.
 - [x] **GATE 2:** human hand-checks one manual balance calculation against the test output before import work begins
 
 ## Phase 3 — CSV Import Pipeline
@@ -92,4 +92,10 @@ Import `expenses_export.csv` exactly as given, no manual edits to the file. For 
 - [x] Implement backend endpoint POST /api/groups/{id}/leave/ and write API unit tests verifying balance checks and left_on update — Built leave_group endpoint with balance validation checking net creditors/debtors and sets left_on
 - [x] Implement frontend "Leave Group" button, error handling, redirect, and state updates — Added Leave Group button under Actions column, handled balance validation errors, auto-redirected and reactively refreshed sidebar
 - [x] Update docs/DECISIONS.md with the Leave Group business logic decisions — Added decision log entry on zero-balance enforcement and rounding/tolerance reuse
+
+## Rejoin Group Feature
+- [x] Relax Membership unique constraint to (user, group, joined_on) on the database and apply the migration — Created migration 0004 removing unique_membership_per_group and creating unique_membership_per_group_date, and applied it
+- [x] Update add-member endpoint to allow rejoining and write unit tests verifying rejoining works and balances filter the gap period correctly — Updated add_member endpoint and balance_calc to handle multiple stints, and added tests verifying rejoin and gap filtering.
+- [x] Update docs/DECISIONS.md with the Rejoin Group business logic decisions — Added decision log for group rejoining, database schema changes, and gap filtering implementation.
+
 

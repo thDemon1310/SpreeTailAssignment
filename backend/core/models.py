@@ -76,11 +76,11 @@ class Membership(models.Model):
 
     class Meta:
         db_table = 'core_membership'
-        # A user can only have one active membership per group at a time
+        # A user can only have one membership per group starting on a given date
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'group'],
-                name='unique_membership_per_group',
+                fields=['user', 'group', 'joined_on'],
+                name='unique_membership_per_group_date',
             ),
         ]
         ordering = ['joined_on']

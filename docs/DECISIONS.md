@@ -215,5 +215,12 @@ B. Block users from leaving if they have any outstanding balance in either direc
 **Tradeoff accepted:** Users are forced to settle up all outstanding debts before they can leave a group. If other members are unresponsive or offline, a user might be blocked from leaving indefinitely until someone records a settlement.
 **Reversible?** Yes — we can relax the backend check to a warning or change the balance verification logic if needed in a live-session change request.
 
-
-
+## [2026-07-23] Decision: Allow rejoining groups and ignore gap period expenses in balances
+**Options considered:**
+A. Maintain a single `Membership` row per user/group and allow updating/re-activating it (overwriting previous join/leave dates).
+B. Maintain a single `Membership` row but store join/leave history as a JSON list in a text field.
+C. Allow multiple `Membership` rows per user/group with a unique constraint on `(user, group, joined_on)`, validating that new stint dates are non-overlapping and strictly chronological.
+**Chosen:** C — Multiple Membership rows per user/group.
+**Why:** Option A destroys historical membership data (we wouldn't know when the user left or when they were in the group previously). Option B makes querying and joining in SQL extremely complex and brittle. Option C allows us to cleanly model multiple distinct membership stints (stints of active participation) using standard database relational integrity. The `joined_on`/`left_on` fields remain standard dates, and we can easily check active stints or sum/filter splits that fall within any of the stints.
+**Tradeoff accepted:** We must validate at the API layer that a user cannot have overlapping stints (a user cannot join a group they are already active in, and a new join date must be after their latest previous leave date). Additionally, any split assigned to a user during a gap period is ignored in their balance, which could theoretically cause a non-zero sum if splits are improperly created for inactive users (though views/importers protect against this).
+**Reversible?** Yes — we can adjust validation rules or query patterns in `balance_calc.py` without modifying the DB schema.
