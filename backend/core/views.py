@@ -116,12 +116,22 @@ def add_member(request, group_id):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    # Check for existing membership
-    if group.memberships.filter(user=user).exists():
+    # Check for active membership
+    if group.memberships.filter(user=user, left_on__isnull=True).exists():
         return Response(
-            {'detail': 'User is already a member of this group.'},
+            {'detail': 'User is already an active member of this group.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    # Validate new join date is after latest previous leave date
+    latest_left = group.memberships.filter(user=user).order_by('-left_on').first()
+    if latest_left and latest_left.left_on:
+        new_joined_on = serializer.validated_data['joined_on']
+        if new_joined_on <= latest_left.left_on:
+            return Response(
+                {'detail': f"New join date must be after the user's previous leave date ({latest_left.left_on})."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     membership = Membership.objects.create(
         user=user,
@@ -326,12 +336,14 @@ def leave_group(request, group_id):
     only if their balance is exactly zero.
     """
     group = get_object_or_404(Group, id=group_id)
-    membership = group.memberships.filter(user=request.user).first()
-    
-    if not membership:
+    # Check if any membership exists
+    any_membership = group.memberships.filter(user=request.user).first()
+    if not any_membership:
         return Response({'detail': 'You are not a member of this group.'}, status=status.HTTP_400_BAD_REQUEST)
         
-    if membership.left_on is not None:
+    # Check if an active membership exists
+    membership = group.memberships.filter(user=request.user, left_on__isnull=True).first()
+    if not membership:
         return Response({'detail': 'You have already left this group.'}, status=status.HTTP_400_BAD_REQUEST)
         
     # Get all balances to find who is owed or who owes
@@ -399,15 +411,20 @@ def group_user_balance_detail(request, group_id, user_id):
     # Underlying queries
     paid_expenses = Expense.objects.filter(group=group, paid_by=target_user)
     
-    membership = Membership.objects.filter(group=group, user=target_user).first()
-    if membership:
+    from django.db.models import Q
+    memberships = Membership.objects.filter(group=group, user=target_user)
+    if memberships.exists():
+        q_filter = Q()
+        for mem in memberships:
+            stint_q = Q(expense__date__gte=mem.joined_on)
+            if mem.left_on:
+                stint_q &= Q(expense__date__lte=mem.left_on)
+            q_filter |= stint_q
+
         owed_splits = ExpenseSplit.objects.filter(
             user=target_user,
-            expense__group=group,
-            expense__date__gte=membership.joined_on
-        ).select_related('expense')
-        if membership.left_on:
-            owed_splits = owed_splits.filter(expense__date__lte=membership.left_on)
+            expense__group=group
+        ).filter(q_filter).select_related('expense')
     else:
         owed_splits = ExpenseSplit.objects.none()
 
