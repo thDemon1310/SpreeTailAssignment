@@ -45,18 +45,19 @@ from core.models import Expense, ExpenseSplit, Settlement, Membership
 ZERO = Decimal('0.00')
 
 
+from collections import defaultdict
+
 def _get_membership_windows(group_id: int) -> dict:
     """
-    Return {user_id: (joined_on, left_on)} for all members of the group.
-    left_on may be None (still active).
+    Return {user_id: [(joined_on, left_on), ...]} for all members of the group.
     """
     memberships = Membership.objects.filter(group_id=group_id).values(
         'user_id', 'joined_on', 'left_on'
     )
-    return {
-        m['user_id']: (m['joined_on'], m['left_on'])
-        for m in memberships
-    }
+    windows = defaultdict(list)
+    for m in memberships:
+        windows[m['user_id']].append((m['joined_on'], m['left_on']))
+    return windows
 
 
 def _total_paid(group_id: int, user_id: int) -> Decimal:
@@ -69,25 +70,25 @@ def _total_paid(group_id: int, user_id: int) -> Decimal:
     return result['total'] or ZERO
 
 
-def _total_owed(group_id: int, user_id: int, joined_on, left_on) -> Decimal:
+def _total_owed(group_id: int, user_id: int, stints: list) -> Decimal:
     """
     Sum of this user's ExpenseSplit shares for expenses that fall within
-    their membership window.
-
-    The window filter is applied at query time using the membership dates,
-    not via Membership.is_active_on() (which would require a Python loop
-    over every split row — this is a single SQL query instead).
+    ANY of their membership windows/stints.
     """
-    # Base filter: splits for this user in this group
+    if not stints:
+        return ZERO
+
+    q_filter = Q()
+    for joined_on, left_on in stints:
+        stint_q = Q(expense__date__gte=joined_on)
+        if left_on is not None:
+            stint_q &= Q(expense__date__lte=left_on)
+        q_filter |= stint_q
+
     qs = ExpenseSplit.objects.filter(
         user_id=user_id,
         expense__group_id=group_id,
-        expense__date__gte=joined_on,  # expense on or after join date
-    )
-
-    # If the user has left, also exclude expenses after their departure date
-    if left_on is not None:
-        qs = qs.filter(expense__date__lte=left_on)
+    ).filter(q_filter)
 
     result = qs.aggregate(total=Sum('share_amount'))
     return result['total'] or ZERO
@@ -96,20 +97,6 @@ def _total_owed(group_id: int, user_id: int, joined_on, left_on) -> Decimal:
 def _settlement_net(group_id: int, user_id: int) -> Decimal:
     """
     Net settlement contribution to this user's balance.
-
-    When someone pays YOU a settlement, your outstanding receivable decreases
-    (the debt is cleared). When YOU pay someone, your outstanding debt decreases.
-
-    From your balance's perspective:
-        settlements_made     → reduces what you owe    → positive contribution
-        settlements_received → reduces what others owe  → negative contribution
-
-    So: net = settlements_made - settlements_received
-
-    Full balance formula:
-        balance = total_paid - total_owed - settlements_received + settlements_made
-               = total_paid - total_owed + (settlements_made - settlements_received)
-               = total_paid - total_owed + _settlement_net()
     """
     received = (
         Settlement.objects
@@ -123,28 +110,15 @@ def _settlement_net(group_id: int, user_id: int) -> Decimal:
         .aggregate(total=Sum('amount'))
     )['total'] or ZERO
 
-    # made - received: paying off debt improves your balance,
-    # receiving payment reduces the outstanding debt others owe you
     return made - received
 
 
 def calculate_balances(group_id: int) -> dict:
     """
     Compute balance for every member currently (or historically) in the group.
-
-    Returns:
-        Dict of {user_id: Decimal} — one entry per Membership row in the group.
-        Positive = net creditor, negative = net debtor.
-        Invariant: sum(result.values()) == 0 always.
-
-    A user who paid expenses but has no Membership row is still included
-    via their paid amounts — their total_owed defaults to 0.
     """
     windows = _get_membership_windows(group_id)
 
-    # Collect all user_ids who appear in this group — either as members
-    # or as payers (to handle edge cases where someone paid but isn't listed
-    # as a member, e.g. the group creator before membership was formally added)
     payer_ids = set(
         Expense.objects
         .filter(group_id=group_id)
@@ -157,12 +131,9 @@ def calculate_balances(group_id: int) -> dict:
         paid = _total_paid(group_id, user_id)
 
         if user_id in windows:
-            joined_on, left_on = windows[user_id]
-            owed = _total_owed(group_id, user_id, joined_on, left_on)
+            stints = windows[user_id]
+            owed = _total_owed(group_id, user_id, stints)
         else:
-            # No membership row — they paid but don't owe anything
-            # (unusual, but zero-sum invariant is maintained because their
-            # splits won't be counted by any member's _total_owed either)
             owed = ZERO
 
         net_settlement = _settlement_net(group_id, user_id)
@@ -174,18 +145,14 @@ def calculate_balances(group_id: int) -> dict:
 def calculate_user_balance(group_id: int, user_id: int) -> Decimal:
     """
     Compute balance for a single user in a group.
-
-    Returns 0 if the user has no membership and no financial activity in
-    this group (rather than raising), since the API needs a safe default
-    for non-members who may appear in import anomaly context.
     """
     windows = _get_membership_windows(group_id)
 
     paid = _total_paid(group_id, user_id)
 
     if user_id in windows:
-        joined_on, left_on = windows[user_id]
-        owed = _total_owed(group_id, user_id, joined_on, left_on)
+        stints = windows[user_id]
+        owed = _total_owed(group_id, user_id, stints)
     else:
         owed = ZERO
 
